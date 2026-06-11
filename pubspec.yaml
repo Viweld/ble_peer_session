@@ -1,0 +1,35 @@
+name: ble_peer_session
+description: Offline BLE peer-to-peer sessions for Flutter — discovery, consent handshake, and bidirectional messaging.
+version: 0.1.0
+homepage: https://github.com/vadimziborov/ble_peer_session
+repository: https://github.com/vadimziborov/ble_peer_session
+issue_tracker: https://github.com/vadimziborov/ble_peer_session/issues
+
+topics:
+  - bluetooth
+  - ble
+  - flutter
+  - p2p
+  - peer-to-peer
+
+environment:
+  sdk: ^3.8.0
+  flutter: ">=3.32.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  bluetooth_low_energy: ^6.1.0
+  flutter_blue_plus: ^2.0.0
+  permission_handler: ^12.0.1
+  device_info_plus: ^12.1.0
+  url_launcher: ^6.3.2
+  json_annotation: ^4.9.0
+  meta: ^1.16.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  build_runner: ^2.7.1
+  json_serializable: ^6.8.0
