@@ -9,30 +9,30 @@ import '../../../domain/exceptions/bluetooth_exceptions.dart';
 import '../../../domain/logger/logger.dart';
 import '../../../domain/transport/transport_link_server.dart';
 import 'ble_link_base.dart';
+import 'ble_link_readiness.dart';
 
-final class BleLinkServerImpl extends BleLinkBase
-    implements TransportLinkServer {
-  BleLinkServerImpl({
-    required Logger logger,
-    required BlePeerConfig config,
-  }) : _log = logger,
-       super(
-         appName: config.appName,
-         serviceId: config.serviceUuid,
-         characteristicId: config.characteristicUuid,
-       );
+final class BleLinkServerImpl extends BleLinkBase implements TransportLinkServer {
+  BleLinkServerImpl({required Logger logger, required BlePeerConfig config})
+    : _log = logger,
+      super(
+        appName: config.appName,
+        serviceId: config.serviceUuid,
+        characteristicId: config.characteristicUuid,
+      );
 
   final Logger _log;
   final _peripheralManager = PeripheralManager();
   GATTCharacteristic? _writeCharacteristic;
-  StreamSubscription<GATTCharacteristicWriteRequestedEventArgs>?
-  _writeRequestSubscription;
+  StreamSubscription<GATTCharacteristicWriteRequestedEventArgs>? _writeRequestSubscription;
   final Map<String, Central> _connectedClients = {};
 
   @override
   Future<void> startAdvertisingAs({required String deviceName}) async {
     try {
+      await BleLinkReadiness.ensurePermissions();
+      await BleLinkReadiness.ensureManagerPoweredOn(_peripheralManager);
       await stopAdvertising();
+      await _peripheralManager.removeAllServices();
 
       _writeCharacteristic = GATTCharacteristic.mutable(
         uuid: super.characteristicUuid,
@@ -41,10 +41,7 @@ final class BleLinkServerImpl extends BleLinkBase
           GATTCharacteristicProperty.write,
           GATTCharacteristicProperty.notify,
         ],
-        permissions: [
-          GATTCharacteristicPermission.read,
-          GATTCharacteristicPermission.write,
-        ],
+        permissions: [GATTCharacteristicPermission.read, GATTCharacteristicPermission.write],
         descriptors: [],
       );
 
@@ -57,17 +54,23 @@ final class BleLinkServerImpl extends BleLinkBase
 
       await _peripheralManager.addService(service);
 
-      _writeRequestSubscription = _peripheralManager
-          .characteristicWriteRequested
-          .listen(_peripheralEventHandler);
+      _writeRequestSubscription = _peripheralManager.characteristicWriteRequested.listen(
+        _peripheralEventHandler,
+      );
 
       await _peripheralManager.startAdvertising(
         Advertisement(name: deviceName, serviceUUIDs: [super.serviceUuid]),
       );
+    } on BluetoothDisabledException {
+      rethrow;
+    } on BluetoothUnsupportedException {
+      rethrow;
+    } on BluetoothPermissionsDeniedException {
+      rethrow;
     } on Object catch (e) {
       _log.e('Ошибка запуска рекламы: $e');
       if (e is PlatformException && e.code.contains('IllegalStateException')) {
-        throw BluetoothDisabledException();
+        throw BluetoothPeripheralUnavailableException();
       }
       rethrow;
     }
@@ -116,9 +119,7 @@ final class BleLinkServerImpl extends BleLinkBase
     await disconnect();
   }
 
-  Future<void> _peripheralEventHandler(
-    GATTCharacteristicWriteRequestedEventArgs event,
-  ) async {
+  Future<void> _peripheralEventHandler(GATTCharacteristicWriteRequestedEventArgs event) async {
     final clientId = event.central.uuid.toString();
 
     if (!_connectedClients.containsKey(clientId)) {

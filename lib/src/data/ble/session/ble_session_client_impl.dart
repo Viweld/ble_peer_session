@@ -4,20 +4,16 @@ import '../../../domain/models/device.dart';
 import '../../../domain/models/peer_endpoint.dart';
 import '../../../domain/models/transport_message.dart';
 import '../../../domain/transport/messenger.dart';
+import '../../../domain/transport/models/transport_session_state.dart';
 import '../../../domain/transport/transport_session_client.dart';
 import '../link/ble_link_client_impl.dart';
 import 'ble_session_base.dart';
 
-final class BleSessionClientImpl extends BleSessionBase
-    implements TransportSessionClient {
-  BleSessionClientImpl({
-    required BleLinkClientImpl link,
-    required Messenger messenger,
-  }) : _link = link,
-       _messenger = messenger {
-    _unhandledMessagesSubscription = _messenger.messagesStream.listen(
-      _messagesHandler,
-    );
+final class BleSessionClientImpl extends BleSessionBase implements TransportSessionClient {
+  BleSessionClientImpl({required BleLinkClientImpl link, required Messenger messenger})
+    : _link = link,
+      _messenger = messenger {
+    _unhandledMessagesSubscription = _messenger.messagesStream.listen(_messagesHandler);
     _handledMessagesController = StreamController<TransportMessage>.broadcast();
   }
 
@@ -28,16 +24,13 @@ final class BleSessionClientImpl extends BleSessionBase
   late final StreamController<TransportMessage> _handledMessagesController;
 
   @override
-  Stream<List<Device>> get discoveredDevicesStream =>
-      _link.discoveredDevicesStream;
+  Stream<List<Device>> get discoveredDevicesStream => _link.discoveredDevicesStream;
 
   @override
-  Stream<TransportMessage> get messagesStream =>
-      _handledMessagesController.stream;
+  Stream<TransportMessage> get messagesStream => _handledMessagesController.stream;
 
   @override
-  Future<void> sendMessage(TransportMessage message) =>
-      _messenger.sendMessage(message);
+  Future<void> sendMessage(TransportMessage message) => _messenger.sendMessage(message);
 
   @override
   Future<void> startDiscovery({required PeerEndpoint localPeer}) async {
@@ -54,19 +47,29 @@ final class BleSessionClientImpl extends BleSessionBase
   @override
   Future<void> connectToDevice(Device device) async {
     await _link.connectToDevice(device);
-    await _messenger.sendMessage(
-      InvitationMessage(peerEndpoint: localPeer),
-    );
+    await _messenger.sendMessage(InvitationMessage(peerEndpoint: localPeer));
     onConnectionInvitationSent();
   }
 
   @override
   Future<void> disconnect() async {
-    await _messenger.sendMessage(
-      DisconnectionMessage(peerEndpoint: localPeer),
-    );
-    await _link.disconnect();
-    onSessionDisconnected();
+    final TransportSessionState? state = currentConnectionState;
+    if (state == null) return;
+
+    switch (state) {
+      case TransportSessionConnected():
+        await _messenger.sendMessage(DisconnectionMessage(peerEndpoint: localPeer));
+        await _link.disconnect();
+        onSessionDisconnected();
+      case TransportSessionAwaitingRemoteDecision():
+        await _link.disconnect();
+        onConnectionRequestRemoteRejected();
+      case TransportSessionDisconnected():
+        await stopDiscovery();
+      case TransportSessionAwaitingUserDecision():
+        await _link.disconnect();
+        onConnectionRequestUserRejected();
+    }
   }
 
   @override

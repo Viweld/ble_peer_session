@@ -1,3 +1,11 @@
+## 0.1.2
+
+- Fixed role switching in `BleTransportFacadeImpl`: skip `disconnect()` when the active session is uninitialized, preventing crashes on first `startClientTransportSession` / `startServerTransportSession`.
+- Added state-aware `disconnect()` for client and server sessions (discovery, awaiting decision, connected).
+- Added `BleLinkReadiness` to verify Bluetooth permissions and powered-on state before discovery/advertising.
+- Added `BluetoothUnsupportedException`, `BluetoothPermissionsDeniedException`, and `BluetoothPeripheralUnavailableException`.
+- Added tests for facade role switching.
+
 ## 0.1.1
 
 - Removed unused dependencies (`json_annotation`, `build_runner`, `json_serializable`).

@@ -3,20 +3,16 @@ import 'dart:async';
 import '../../../domain/models/peer_endpoint.dart';
 import '../../../domain/models/transport_message.dart';
 import '../../../domain/transport/messenger.dart';
+import '../../../domain/transport/models/transport_session_state.dart';
 import '../../../domain/transport/transport_session_server.dart';
 import '../link/ble_link_server_impl.dart';
 import 'ble_session_base.dart';
 
-final class BleSessionServerImpl extends BleSessionBase
-    implements TransportSessionServer {
-  BleSessionServerImpl({
-    required BleLinkServerImpl link,
-    required Messenger messenger,
-  }) : _link = link,
-       _messenger = messenger {
-    _unhandledMessagesSubscription = _messenger.messagesStream.listen(
-      _messagesHandler,
-    );
+final class BleSessionServerImpl extends BleSessionBase implements TransportSessionServer {
+  BleSessionServerImpl({required BleLinkServerImpl link, required Messenger messenger})
+    : _link = link,
+      _messenger = messenger {
+    _unhandledMessagesSubscription = _messenger.messagesStream.listen(_messagesHandler);
     _handledMessagesController = StreamController<TransportMessage>.broadcast();
   }
 
@@ -27,12 +23,10 @@ final class BleSessionServerImpl extends BleSessionBase
   late final StreamController<TransportMessage> _handledMessagesController;
 
   @override
-  Stream<TransportMessage> get messagesStream =>
-      _handledMessagesController.stream;
+  Stream<TransportMessage> get messagesStream => _handledMessagesController.stream;
 
   @override
-  Future<void> sendMessage(TransportMessage message) =>
-      _messenger.sendMessage(message);
+  Future<void> sendMessage(TransportMessage message) => _messenger.sendMessage(message);
 
   @override
   Future<void> startAdvertising({required PeerEndpoint localPeer}) async {
@@ -45,28 +39,33 @@ final class BleSessionServerImpl extends BleSessionBase
 
   @override
   Future<void> acceptInvitation() async {
-    await _messenger.sendMessage(
-      AcceptanceMessage(peerEndpoint: localPeer),
-    );
+    await _messenger.sendMessage(AcceptanceMessage(peerEndpoint: localPeer));
     onConnectionRequestUserAccepted();
   }
 
   @override
   Future<void> rejectInvitation() async {
-    await _messenger.sendMessage(
-      RejectionMessage(peerEndpoint: localPeer),
-    );
+    await _messenger.sendMessage(RejectionMessage(peerEndpoint: localPeer));
     await _link.disconnect();
     onConnectionRequestUserRejected();
   }
 
   @override
   Future<void> disconnect() async {
-    await _messenger.sendMessage(
-      DisconnectionMessage(peerEndpoint: localPeer),
-    );
-    await _link.disconnect();
-    onSessionDisconnected();
+    final TransportSessionState? state = currentConnectionState;
+    if (state == null) return;
+
+    switch (state) {
+      case TransportSessionConnected():
+        await _messenger.sendMessage(DisconnectionMessage(peerEndpoint: localPeer));
+        await _link.disconnect();
+        onSessionDisconnected();
+      case TransportSessionAwaitingUserDecision():
+        await rejectInvitation();
+      case TransportSessionDisconnected():
+      case TransportSessionAwaitingRemoteDecision():
+        await stopAdvertising();
+    }
   }
 
   @override

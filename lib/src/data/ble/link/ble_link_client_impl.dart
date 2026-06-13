@@ -8,19 +8,17 @@ import '../../../domain/logger/logger.dart';
 import '../../../domain/models/device.dart';
 import '../../../domain/transport/transport_link_client.dart';
 import 'ble_link_base.dart';
+import 'ble_link_readiness.dart';
 
-final class BleLinkClientImpl extends BleLinkBase
-    implements TransportLinkClient {
-  BleLinkClientImpl({
-    required Logger logger,
-    required BlePeerConfig config,
-  }) : _log = logger,
-       _deviceNamePrefix = config.deviceNamePrefix,
-       super(
-         appName: config.appName,
-         serviceId: config.serviceUuid,
-         characteristicId: config.characteristicUuid,
-       ) {
+final class BleLinkClientImpl extends BleLinkBase implements TransportLinkClient {
+  BleLinkClientImpl({required Logger logger, required BlePeerConfig config})
+    : _log = logger,
+      _deviceNamePrefix = config.deviceNamePrefix,
+      super(
+        appName: config.appName,
+        serviceId: config.serviceUuid,
+        characteristicId: config.characteristicUuid,
+      ) {
     _discoveredDevicesController = StreamController<List<Device>>.broadcast();
   }
 
@@ -37,12 +35,13 @@ final class BleLinkClientImpl extends BleLinkBase
   StreamSubscription<GATTCharacteristicNotifiedEventArgs>? _dataSubscription;
 
   @override
-  Stream<List<Device>> get discoveredDevicesStream =>
-      _discoveredDevicesController.stream;
+  Stream<List<Device>> get discoveredDevicesStream => _discoveredDevicesController.stream;
 
   @override
   Future<void> startDiscovery() async {
     try {
+      await BleLinkReadiness.ensurePermissions();
+      await BleLinkReadiness.ensureManagerPoweredOn(_centralManager);
       await stopDiscovery();
       _foundDevices.clear();
       _discoveredPeripherals.clear();
@@ -50,11 +49,7 @@ final class BleLinkClientImpl extends BleLinkBase
 
       _scanSubscription = _centralManager.discovered.listen((event) {
         final isOurApp = _isOurApplication(event.advertisement);
-        _processDiscoveredDevice(
-          event.peripheral,
-          event.advertisement,
-          isOurApp,
-        );
+        _processDiscoveredDevice(event.peripheral, event.advertisement, isOurApp);
       });
 
       await _centralManager.startDiscovery(serviceUUIDs: [super.serviceUuid]);
@@ -102,28 +97,19 @@ final class BleLinkClientImpl extends BleLinkBase
         for (final characteristic in service.characteristics) {
           if (characteristic.uuid != super.characteristicUuid) continue;
 
-          if (characteristic.properties.contains(
-            GATTCharacteristicProperty.notify,
-          )) {
+          if (characteristic.properties.contains(GATTCharacteristicProperty.notify)) {
             await _centralManager.setCharacteristicNotifyState(
               peripheral,
               characteristic,
               state: true,
             );
             _dataSubscription = _centralManager.characteristicNotified
-                .where(
-                  (args) =>
-                      args.characteristic.uuid == super.characteristicUuid,
-                )
+                .where((args) => args.characteristic.uuid == super.characteristicUuid)
                 .listen((event) => translateIncomingData(event.value));
           }
 
-          if (characteristic.properties.contains(
-                GATTCharacteristicProperty.write,
-              ) ||
-              characteristic.properties.contains(
-                GATTCharacteristicProperty.writeWithoutResponse,
-              )) {
+          if (characteristic.properties.contains(GATTCharacteristicProperty.write) ||
+              characteristic.properties.contains(GATTCharacteristicProperty.writeWithoutResponse)) {
             _writeCharacteristic = characteristic;
           }
         }
@@ -134,9 +120,7 @@ final class BleLinkClientImpl extends BleLinkBase
         throw Exception('На устройстве не найден сервис ${super.serviceUuid}');
       }
 
-      await _centralManager
-          .requestMTU(peripheral, mtu: 512)
-          .catchError((_) => 0);
+      await _centralManager.requestMTU(peripheral, mtu: 512).catchError((_) => 0);
       await Future<void>.delayed(const Duration(milliseconds: 300));
     } catch (e) {
       _connectedPeripheral = null;
@@ -206,11 +190,7 @@ final class BleLinkClientImpl extends BleLinkBase
     return false;
   }
 
-  void _processDiscoveredDevice(
-    Peripheral peripheral,
-    Advertisement advertisement,
-    bool isOurApp,
-  ) {
+  void _processDiscoveredDevice(Peripheral peripheral, Advertisement advertisement, bool isOurApp) {
     final deviceName = advertisement.name ?? peripheral.uuid.toString();
     final deviceId = peripheral.uuid.toString();
     _discoveredPeripherals[deviceId] = peripheral;
@@ -220,18 +200,14 @@ final class BleLinkClientImpl extends BleLinkBase
     }
     final discovered = Device(id: deviceId, name: cleanName, isOurApp: isOurApp);
     if (_foundDevices.any((p) => p.id == discovered.id)) return;
-    isOurApp
-        ? _foundDevices.insert(0, discovered)
-        : _foundDevices.add(discovered);
+    isOurApp ? _foundDevices.insert(0, discovered) : _foundDevices.add(discovered);
     _discoveredDevicesController.add(List.unmodifiable(_foundDevices));
   }
 
   String _getCleanDeviceName(String deviceName, String appName) {
     if (!deviceName.contains(appName)) return deviceName;
     var cleanName = deviceName.replaceAll(appName, '').replaceAll('🎮', '').trim();
-    return cleanName.startsWith('-')
-        ? cleanName.substring(1).trim()
-        : cleanName;
+    return cleanName.startsWith('-') ? cleanName.substring(1).trim() : cleanName;
   }
 
   bool _isGattError133(Exception e) {
