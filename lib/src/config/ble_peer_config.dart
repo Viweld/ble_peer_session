@@ -1,4 +1,4 @@
-/// Конфигурация BLE P2P-сессии.
+/// BLE P2P session configuration (service UUIDs and app identifier).
 final class BlePeerConfig {
   const BlePeerConfig({
     required this.appName,
@@ -6,8 +6,6 @@ final class BlePeerConfig {
     required this.characteristicUuid,
     this.deviceNamePrefix = '',
     this.protocolVersion = 1,
-    this.frameMaxPayloadBytes = 512,
-    this.enableAck = false,
   });
 
   final String appName;
@@ -15,6 +13,4 @@ final class BlePeerConfig {
   final String characteristicUuid;
   final String deviceNamePrefix;
   final int protocolVersion;
-  final int frameMaxPayloadBytes;
-  final bool enableAck;
 }

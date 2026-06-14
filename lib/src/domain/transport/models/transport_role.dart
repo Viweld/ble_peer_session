@@ -1,5 +1,2 @@
-/// Роль устройства в BLE-сессии.
-enum TransportRole {
-  client,
-  server,
-}
+/// Device role in a BLE session (internal).
+enum TransportRole { client, server }

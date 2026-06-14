@@ -1,50 +1,50 @@
 # Backlog — ble_peer_session
 
-Задачи на следующие версии пакета.
+Tasks for upcoming package versions.
 
-## v0.2
+## v0.3
 
-### Framing для сообщений > MTU
+### Framing for messages > MTU
 
-**Проблема:** сейчас один GATT write/notify = одно JSON-сообщение. Если payload больше effective MTU (~20–500 байт), данные обрезаются или не парсятся.
+**Problem:** one GATT write/notify equals one JSON message. Payloads larger than the effective MTU (~20–500 bytes) are truncated or fail to parse.
 
-**Цель:** поддержать логические сообщения произвольного размера через разбиение на кадры и сборку на приёмнике.
+**Goal:** support logical messages of arbitrary size via frame splitting and reassembly.
 
-**Где реализовать:** слой Link (`BleLinkBase`), не Messenger.
+**Where:** Link layer (`BleLinkBase`), not Messenger.
 
-**Черновик формата кадра:**
-- length-prefix: `[uint32 BE length][payload bytes…]`, или
+**Draft frame format:**
+- length-prefix: `[uint32 BE length][payload bytes…]`, or
 - chunking: `[frameId][seq][total][chunk…]`
 
-**Критерии готовности:**
-- [ ] `BleFrameCodec` encode/decode в `lib/src/codec/`
-- [ ] интеграция в `BleLinkClientImpl` / `BleLinkServerImpl`
-- [ ] unit-тесты: split/join, oversized payload, corrupt length
-- [ ] лимит размера сообщения и поведение при превышении — в README
+**Done when:**
+- [ ] `BleFrameCodec` encode/decode in `lib/src/codec/`
+- [ ] integration in `BleLinkClientImpl` / `BleLinkServerImpl`
+- [ ] unit tests: split/join, oversized payload, corrupt length
+- [ ] max message size and overflow behavior documented in README
 
 ---
 
-## Примеры и документация
+## Examples and documentation
 
 ### example/minimal_chat
 
-**Цель:** reference-приложение в пакете, демонстрирующее end-to-end сценарий без batuga.
+**Goal:** reference app demonstrating end-to-end flow without a host app.
 
-**Экраны / сценарии:**
-- [ ] выбор роли: server (advertise) / client (discover)
-- [ ] список найденных устройств (`discoveredDevicesStream`)
-- [ ] handshake: invitation → accept/reject
-- [ ] двусторонний чат через `PeerMessage(type: 'chat.text')`
-- [ ] вкладка benchmark: ping/pong, min/avg/max RTT (ms)
+**Screens / flows:**
+- [ ] role pick: host (advertise) / client (discover)
+- [ ] discovered devices list
+- [ ] handshake: invite → accept/reject
+- [ ] bidirectional chat via `PeerMessage(type: 'chat.text')`
+- [ ] benchmark tab: ping/pong RTT
 
-**Критерии готовности:**
-- [ ] `example/minimal_chat/` — отдельное Flutter-приложение
-- [ ] README: раздел «Example» со ссылкой и шагами запуска на двух устройствах
+**Done when:**
+- [ ] `example/minimal_chat/` Flutter app
+- [ ] README «Example» section with two-device run steps
 
 ---
 
-## Позже (не в v0.2)
+## Later
 
-- Reliability: опциональный ACK/retry для критичных сообщений
-- Reconnect policy при обрыве BLE-сессии
-- Mesh до 6 участников (отдельный ADR)
+- Reliability: optional ACK/retry for critical messages
+- Reconnect policy on BLE drop
+- ~~Mesh up to 6 participants~~ — **out of scope**; package targets 1:1 only

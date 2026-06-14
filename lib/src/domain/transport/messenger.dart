@@ -1,6 +1,6 @@
-import '../models/transport_message.dart';
+import '../internal/transport_message.dart';
 
-/// Сериализация сообщений транспортного слоя.
+/// Sends and receives decoded [TransportMessage] instances over the BLE link.
 abstract interface class Messenger {
   Stream<TransportMessage> get messagesStream;
 

@@ -3,8 +3,8 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import '../../../codec/transport_message_codec.dart';
+import '../../../domain/internal/transport_message.dart';
 import '../../../domain/logger/logger.dart';
-import '../../../domain/models/transport_message.dart';
 import '../../../domain/transport/messenger.dart';
 import '../link/ble_link_base.dart';
 
@@ -30,17 +30,14 @@ final class BleMessengerImpl implements Messenger {
   late final StreamController<TransportMessage> _incomingMessagesController;
 
   @override
-  Stream<TransportMessage> get messagesStream =>
-      _incomingMessagesController.stream;
+  Stream<TransportMessage> get messagesStream => _incomingMessagesController.stream;
 
   @override
   Future<void> sendMessage(TransportMessage message) async {
     final json = jsonEncode(_codec.encode(message));
     final bytes = utf8.encode(json);
     if (bytes.length > 480) {
-      _log.w(
-        'Сообщение ${message.runtimeType} (${bytes.length} байт) близко к лимиту MTU',
-      );
+      _log.w('Message ${message.runtimeType} (${bytes.length} bytes) is near the MTU limit');
     }
     await _connector.sendRawMessage(Uint8List.fromList(bytes));
   }
@@ -57,7 +54,7 @@ final class BleMessengerImpl implements Messenger {
       final decoded = jsonDecode(utf8.decode(event)) as Map<String, dynamic>;
       _incomingMessagesController.add(_codec.decode(decoded));
     } catch (e) {
-      _log.e('Ошибка обработки входящих данных: $e');
+      _log.e('Failed to decode incoming message: $e');
     }
   }
 }

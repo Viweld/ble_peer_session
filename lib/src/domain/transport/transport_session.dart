@@ -1,7 +1,7 @@
-import '../models/transport_message.dart';
+import '../internal/transport_message.dart';
 import 'models/transport_session_state.dart';
 
-/// Базовый контракт транспортной сессии.
+/// Base contract for an active transport session (internal, not exported).
 abstract interface class TransportSession {
   TransportSessionState? get currentConnectionState;
 

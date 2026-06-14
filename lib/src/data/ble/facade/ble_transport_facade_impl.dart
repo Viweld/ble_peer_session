@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import '../../../domain/models/transport_message.dart';
+import '../../../domain/internal/transport_message.dart';
 import '../../../domain/transport/models/transport_role.dart';
 import '../../../domain/transport/models/transport_session_state.dart';
 import '../../../domain/transport/transport_facade.dart';

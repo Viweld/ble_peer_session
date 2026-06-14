@@ -4,7 +4,7 @@ import 'package:ble_peer_session/src/data/ble/facade/ble_transport_facade_impl.d
 import 'package:ble_peer_session/src/domain/models/device.dart';
 import 'package:ble_peer_session/src/domain/models/peer_endpoint.dart';
 import 'package:ble_peer_session/src/domain/models/peer_identity.dart';
-import 'package:ble_peer_session/src/domain/models/transport_message.dart';
+import 'package:ble_peer_session/src/domain/internal/transport_message.dart';
 import 'package:ble_peer_session/src/domain/transport/models/transport_session_state.dart';
 import 'package:ble_peer_session/src/domain/transport/transport_session.dart';
 import 'package:ble_peer_session/src/domain/transport/transport_session_client.dart';

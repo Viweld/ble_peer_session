@@ -1,10 +1,10 @@
-import '../models/transport_message.dart';
+import '../internal/transport_message.dart';
 import 'models/transport_session_state.dart';
 import 'transport_session.dart';
 import 'transport_session_client.dart';
 import 'transport_session_server.dart';
 
-/// Фасад для управления BLE-транспортом.
+/// Internal facade for role switching between client and server sessions.
 abstract interface class TransportFacade {
   Stream<TransportMessage> get messagesStream;
 

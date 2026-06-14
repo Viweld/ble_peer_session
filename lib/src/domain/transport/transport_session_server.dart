@@ -1,7 +1,7 @@
 import '../models/peer_endpoint.dart';
 import 'transport_session.dart';
 
-/// Серверная транспортная сессия.
+/// Server-side transport session (internal).
 abstract interface class TransportSessionServer implements TransportSession {
   Future<void> startAdvertising({required PeerEndpoint localPeer});
 

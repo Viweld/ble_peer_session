@@ -3,9 +3,10 @@ import 'dart:async';
 import 'package:bluetooth_low_energy/bluetooth_low_energy.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-import '../../../domain/exceptions/bluetooth_exceptions.dart';
+import '../../../domain/exceptions/peer_exception.dart';
 import '../../services/bluetooth_permissions_utils.dart';
 
+/// Ensures runtime permissions and a powered-on BLE manager before link operations.
 final class BleLinkReadiness {
   BleLinkReadiness._();
 
@@ -15,11 +16,11 @@ final class BleLinkReadiness {
     final PermissionStatus status = await BluetoothPermissionsUtils.requestPermissions();
     if (status.isGranted) return;
 
-    if (status.isPermanentlyDenied) {
-      throw BluetoothPermissionsDeniedException();
-    }
-
-    throw BluetoothPermissionsDeniedException();
+    throwPeer(
+      status.isPermanentlyDenied
+          ? PeerErrorCode.permissionsPermanentlyDenied
+          : PeerErrorCode.permissionsDenied,
+    );
   }
 
   static Future<void> ensureManagerPoweredOn(BluetoothLowEnergyManager manager) async {
@@ -31,11 +32,11 @@ final class BleLinkReadiness {
     }
 
     if (manager.state == BluetoothLowEnergyState.unsupported) {
-      throw BluetoothUnsupportedException();
+      throwPeer(PeerErrorCode.bluetoothUnsupported);
     }
 
     if (manager.state == BluetoothLowEnergyState.poweredOff) {
-      throw BluetoothDisabledException();
+      throwPeer(PeerErrorCode.bluetoothDisabled);
     }
 
     final Completer<void> poweredOnCompleter = Completer<void>();
@@ -46,15 +47,15 @@ final class BleLinkReadiness {
           if (!poweredOnCompleter.isCompleted) poweredOnCompleter.complete();
         case BluetoothLowEnergyState.poweredOff:
           if (!poweredOnCompleter.isCompleted) {
-            poweredOnCompleter.completeError(BluetoothDisabledException());
+            poweredOnCompleter.completeError(PeerException(PeerErrorCode.bluetoothDisabled));
           }
         case BluetoothLowEnergyState.unsupported:
           if (!poweredOnCompleter.isCompleted) {
-            poweredOnCompleter.completeError(BluetoothUnsupportedException());
+            poweredOnCompleter.completeError(PeerException(PeerErrorCode.bluetoothUnsupported));
           }
         case BluetoothLowEnergyState.unauthorized:
           if (!poweredOnCompleter.isCompleted) {
-            poweredOnCompleter.completeError(BluetoothPermissionsDeniedException());
+            poweredOnCompleter.completeError(PeerException(PeerErrorCode.bluetoothUnauthorized));
           }
         case BluetoothLowEnergyState.unknown:
           break;
@@ -64,7 +65,7 @@ final class BleLinkReadiness {
     try {
       await poweredOnCompleter.future.timeout(
         const Duration(seconds: 10),
-        onTimeout: () => throw BluetoothDisabledException(),
+        onTimeout: () => throwPeer(PeerErrorCode.adapterNotReady),
       );
       await Future<void>.delayed(const Duration(milliseconds: 250));
     } finally {

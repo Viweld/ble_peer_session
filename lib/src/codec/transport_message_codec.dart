@@ -1,7 +1,7 @@
 import '../data/dto/peer_endpoint_dto.dart';
-import '../domain/models/transport_message.dart';
+import '../domain/internal/transport_message.dart';
 
-/// Кодек JSON-сообщений транспортного слоя.
+/// JSON codec for internal [TransportMessage] wire format.
 final class TransportMessageCodec {
   const TransportMessageCodec();
 
@@ -38,7 +38,7 @@ final class TransportMessageCodec {
         _typeKey: 'termination',
         _peerKey: peer,
       },
-      PeerMessage(:final type, :final payload) => {
+      AppTransportMessage(:final type, :final payload) => {
         _versionKey: 1,
         _kindKey: 'app',
         _typeKey: type,
@@ -49,14 +49,12 @@ final class TransportMessageCodec {
   }
 
   TransportMessage decode(Map<String, dynamic> json) {
-    final peer = PeerEndpointDto.fromJson(
-      json[_peerKey] as Map<String, dynamic>,
-    ).toDomain();
+    final peer = PeerEndpointDto.fromJson(json[_peerKey] as Map<String, dynamic>).toDomain();
     final type = json[_typeKey] as String;
     final kind = json[_kindKey] as String? ?? 'session';
 
     if (kind == 'app') {
-      return PeerMessage(
+      return AppTransportMessage(
         peerEndpoint: peer,
         type: type,
         payload: json[_payloadKey] as Map<String, dynamic>?,

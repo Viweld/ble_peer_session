@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:bluetooth_low_energy/bluetooth_low_energy.dart';
 
 import '../../../config/ble_peer_config.dart';
+import '../../../domain/exceptions/peer_exception.dart';
 import '../../../domain/logger/logger.dart';
 import '../../../domain/models/device.dart';
 import '../../../domain/transport/transport_link_client.dart';
@@ -45,7 +46,7 @@ final class BleLinkClientImpl extends BleLinkBase implements TransportLinkClient
       await stopDiscovery();
       _foundDevices.clear();
       _discoveredPeripherals.clear();
-      _log.d('Запуск поиска Bluetooth устройств');
+      _log.d('Starting BLE device scan');
 
       _scanSubscription = _centralManager.discovered.listen((event) {
         final isOurApp = _isOurApplication(event.advertisement);
@@ -53,9 +54,11 @@ final class BleLinkClientImpl extends BleLinkBase implements TransportLinkClient
       });
 
       await _centralManager.startDiscovery(serviceUUIDs: [super.serviceUuid]);
-    } catch (e) {
-      _log.e('Ошибка запуска сканирования: $e');
-      throw Exception('Ошибка поиска устройств: $e');
+    } on PeerException {
+      rethrow;
+    } on Object catch (e, stackTrace) {
+      _log.e('Failed to start discovery: $e');
+      throwPeer(PeerErrorCode.discoveryFailed, cause: e, stackTrace: stackTrace);
     }
   }
 
@@ -66,7 +69,7 @@ final class BleLinkClientImpl extends BleLinkBase implements TransportLinkClient
       await _scanSubscription?.cancel();
       _scanSubscription = null;
     } catch (e) {
-      _log.e('Ошибка остановки сканирования: $e');
+      _log.e('Failed to stop discovery: $e');
     }
   }
 
@@ -81,12 +84,12 @@ final class BleLinkClientImpl extends BleLinkBase implements TransportLinkClient
   Future<void> connectToDevice(Device device) async {
     final peripheral = _discoveredPeripherals[device.id];
     if (peripheral == null) {
-      throw Exception('Устройство не найдено в списке обнаруженных');
+      throwPeer(PeerErrorCode.deviceNotFound);
     }
 
     try {
       _connectedPeripheral = peripheral;
-      await _centralManager.connect(peripheral);
+      await _centralManager.connect(peripheral!);
       final services = await _centralManager.discoverGATT(peripheral);
 
       var serviceFound = false;
@@ -117,22 +120,24 @@ final class BleLinkClientImpl extends BleLinkBase implements TransportLinkClient
       }
 
       if (!serviceFound) {
-        throw Exception('На устройстве не найден сервис ${super.serviceUuid}');
+        throwPeer(PeerErrorCode.serviceNotFound);
       }
 
       await _centralManager.requestMTU(peripheral, mtu: 512).catchError((_) => 0);
       await Future<void>.delayed(const Duration(milliseconds: 300));
-    } catch (e) {
+    } on PeerException {
+      rethrow;
+    } on Object catch (e, stackTrace) {
       _connectedPeripheral = null;
       _writeCharacteristic = null;
-      rethrow;
+      throwPeer(PeerErrorCode.connectionFailed, cause: e, stackTrace: stackTrace);
     }
   }
 
   @override
   Future<void> sendRawMessage(Uint8List data) async {
     if (_connectedPeripheral == null || _writeCharacteristic == null) {
-      throw Exception('Нет активного соединения или характеристики для записи');
+      throwPeer(PeerErrorCode.sessionNotConnected);
     }
 
     try {
@@ -142,12 +147,12 @@ final class BleLinkClientImpl extends BleLinkBase implements TransportLinkClient
         value: data,
         type: GATTCharacteristicWriteType.withoutResponse,
       );
-    } on Exception catch (e) {
-      _log.e('Ошибка отправки данных: $e');
+    } on Object catch (e, stackTrace) {
+      _log.e('Failed to send data: $e');
       if (_isGattError133(e)) {
         await _resetConnection();
       }
-      throw Exception('Ошибка отправки данных: $e');
+      throwPeer(PeerErrorCode.messageSendFailed, cause: e, stackTrace: stackTrace);
     }
   }
 
@@ -159,7 +164,7 @@ final class BleLinkClientImpl extends BleLinkBase implements TransportLinkClient
     try {
       await _centralManager.disconnect(_connectedPeripheral!);
     } catch (e) {
-      _log.e('Ошибка отключения: $e');
+      _log.e('Failed to disconnect: $e');
     } finally {
       _connectedPeripheral = null;
     }
@@ -210,7 +215,7 @@ final class BleLinkClientImpl extends BleLinkBase implements TransportLinkClient
     return cleanName.startsWith('-') ? cleanName.substring(1).trim() : cleanName;
   }
 
-  bool _isGattError133(Exception e) {
+  bool _isGattError133(Object e) {
     final text = e.toString();
     return text.contains('status: 133') ||
         text.contains('GATT_ERROR') ||

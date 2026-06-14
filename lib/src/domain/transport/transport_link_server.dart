@@ -1,6 +1,6 @@
 import 'transport_link.dart';
 
-/// Серверный BLE-канал: advertising.
+/// Server-side BLE link: GATT peripheral and advertising (internal).
 abstract interface class TransportLinkServer implements TransportLink {
   Future<void> startAdvertisingAs({required String deviceName});
 

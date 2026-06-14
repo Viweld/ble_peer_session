@@ -1,3 +1,12 @@
+## 0.2.0
+
+- **Breaking:** new public API — `Peer`, `PeerHost`, `PeerClient`, `PeerMessage`, `PeerException`, `PeerErrorCode`, `PeerConnectionPhase`, `PeerAdapterStatus`.
+- **Breaking:** removed exports of `TransportFacade`, `TransportSession*`, `TransportSessionState`, session message classes, and `Bluetooth*Exception`.
+- Unified errors into `PeerException` with `PeerErrorCode`.
+- Adapter status via `Peer.adapterStatusStream` (no auto-enable Bluetooth).
+- Documentation: mental model diagrams, connection/message flow, [ERROR_CODES.md](doc/ERROR_CODES.md), [MIGRATION.md](doc/MIGRATION.md).
+- 1:1 sessions only; second central rejected at link layer.
+
 ## 0.1.2
 
 - Fixed role switching in `BleTransportFacadeImpl`: skip `disconnect()` when the active session is uninitialized, preventing crashes on first `startClientTransportSession` / `startServerTransportSession`.

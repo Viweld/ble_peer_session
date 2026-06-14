@@ -1,6 +1,10 @@
-/// Контракт логирования для BLE-транспорта.
+/// Logging contract for the BLE transport layer.
 abstract interface class Logger {
   void d(String message);
+
+  void i(String message);
+
   void w(String message);
+
   void e(String message);
 }

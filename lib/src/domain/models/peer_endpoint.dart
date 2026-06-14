@@ -5,10 +5,7 @@ import 'peer_identity.dart';
 
 @immutable
 final class PeerEndpoint {
-  const PeerEndpoint({
-    required this.identity,
-    required this.device,
-  });
+  const PeerEndpoint({required this.identity, required this.device});
 
   final PeerIdentity identity;
   final Device device;

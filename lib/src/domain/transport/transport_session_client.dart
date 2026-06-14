@@ -2,7 +2,7 @@ import '../models/device.dart';
 import '../models/peer_endpoint.dart';
 import 'transport_session.dart';
 
-/// Клиентская транспортная сессия.
+/// Client-side transport session (internal).
 abstract interface class TransportSessionClient implements TransportSession {
   Stream<List<Device>> get discoveredDevicesStream;
 

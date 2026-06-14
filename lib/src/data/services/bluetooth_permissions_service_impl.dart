@@ -1,10 +1,10 @@
 import 'package:permission_handler/permission_handler.dart';
 
+import '../../domain/exceptions/peer_exception.dart';
 import '../../domain/services/bluetooth_permissions_service.dart';
 import 'bluetooth_permissions_utils.dart';
 
-final class BluetoothPermissionsServiceImpl
-    implements BluetoothPermissionsService {
+final class BluetoothPermissionsServiceImpl implements BluetoothPermissionsService {
   @override
   Future<bool> checkPermissions() async {
     var allGranted = await BluetoothPermissionsUtils.checkPermissions();
@@ -15,21 +15,18 @@ final class BluetoothPermissionsServiceImpl
 
     if (status.isPermanentlyDenied) {
       if (await BluetoothPermissionsUtils.openAppSettingsSafe()) {
-        throw Exception(
-          'Предоставьте разрешения Bluetooth в настройках и перезапустите приложение.',
-        );
+        throwPeer(PeerErrorCode.permissionsPermanentlyDenied);
       }
-      throw Exception('Разрешения Bluetooth не предоставлены.');
+      throwPeer(PeerErrorCode.permissionsDenied);
     }
 
     if (status.isDenied) {
-      throw Exception('Разрешения Bluetooth не предоставлены.');
+      throwPeer(PeerErrorCode.permissionsDenied);
     }
 
     return allGranted;
   }
 
   @override
-  Future<bool> openAppSettings() =>
-      BluetoothPermissionsUtils.openAppSettingsSafe();
+  Future<bool> openAppSettings() => BluetoothPermissionsUtils.openAppSettingsSafe();
 }

@@ -2,7 +2,7 @@ import 'dart:async';
 
 import '../../../domain/models/device.dart';
 import '../../../domain/models/peer_endpoint.dart';
-import '../../../domain/models/transport_message.dart';
+import '../../../domain/internal/transport_message.dart';
 import '../../../domain/transport/messenger.dart';
 import '../../../domain/transport/models/transport_session_state.dart';
 import '../../../domain/transport/transport_session_client.dart';

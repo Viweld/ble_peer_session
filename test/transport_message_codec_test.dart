@@ -2,6 +2,7 @@ import 'package:ble_peer_session/ble_peer_session.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:ble_peer_session/src/codec/transport_message_codec.dart';
+import 'package:ble_peer_session/src/domain/internal/transport_message.dart';
 
 void main() {
   const codec = TransportMessageCodec();
@@ -20,17 +21,17 @@ void main() {
     expect(decoded.peerEndpoint.identity.displayName, 'Alice');
   });
 
-  test('peer message roundtrip', () {
-    final message = PeerMessage(
+  test('app message roundtrip', () {
+    final message = AppTransportMessage(
       peerEndpoint: peer,
       type: 'game.move',
       payload: {'row': 1, 'column': 2},
     );
     final decoded = codec.decode(codec.encode(message));
 
-    expect(decoded, isA<PeerMessage>());
-    final peerMessage = decoded as PeerMessage;
-    expect(peerMessage.type, 'game.move');
-    expect(peerMessage.payload?['row'], 1);
+    expect(decoded, isA<AppTransportMessage>());
+    final appMessage = decoded as AppTransportMessage;
+    expect(appMessage.type, 'game.move');
+    expect(appMessage.payload?['row'], 1);
   });
 }

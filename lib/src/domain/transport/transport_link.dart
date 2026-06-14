@@ -1,6 +1,6 @@
 import 'dart:typed_data';
 
-/// Сырой канал передачи данных.
+/// Raw byte channel over BLE (internal).
 abstract interface class TransportLink {
   Stream<Uint8List> get incomingRawMessageStream;
 

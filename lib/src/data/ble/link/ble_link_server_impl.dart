@@ -5,7 +5,7 @@ import 'package:bluetooth_low_energy/bluetooth_low_energy.dart';
 import 'package:flutter/services.dart';
 
 import '../../../config/ble_peer_config.dart';
-import '../../../domain/exceptions/bluetooth_exceptions.dart';
+import '../../../domain/exceptions/peer_exception.dart';
 import '../../../domain/logger/logger.dart';
 import '../../../domain/transport/transport_link_server.dart';
 import 'ble_link_base.dart';
@@ -61,16 +61,12 @@ final class BleLinkServerImpl extends BleLinkBase implements TransportLinkServer
       await _peripheralManager.startAdvertising(
         Advertisement(name: deviceName, serviceUUIDs: [super.serviceUuid]),
       );
-    } on BluetoothDisabledException {
-      rethrow;
-    } on BluetoothUnsupportedException {
-      rethrow;
-    } on BluetoothPermissionsDeniedException {
+    } on PeerException {
       rethrow;
     } on Object catch (e) {
-      _log.e('Ошибка запуска рекламы: $e');
+      _log.e('Failed to start advertising: $e');
       if (e is PlatformException && e.code.contains('IllegalStateException')) {
-        throw BluetoothPeripheralUnavailableException();
+        throwPeer(PeerErrorCode.peripheralUnavailable, cause: e);
       }
       rethrow;
     }
@@ -83,14 +79,14 @@ final class BleLinkServerImpl extends BleLinkBase implements TransportLinkServer
       await _writeRequestSubscription?.cancel();
       _writeRequestSubscription = null;
     } catch (e) {
-      _log.e('Ошибка остановки рекламы: $e');
+      _log.e('Failed to stop advertising: $e');
     }
   }
 
   @override
   Future<void> sendRawMessage(Uint8List data) async {
     if (_connectedClients.isEmpty || _writeCharacteristic == null) {
-      _log.w('Нет подключённых клиентов для уведомления');
+      _log.w('No connected centrals to notify');
       return;
     }
 
@@ -102,7 +98,7 @@ final class BleLinkServerImpl extends BleLinkBase implements TransportLinkServer
           value: data,
         );
       } catch (e) {
-        _log.e('Ошибка уведомления клиента ${client.key}: $e');
+        _log.e('Failed to notify central ${client.key}: $e');
       }
     }
   }
@@ -123,6 +119,7 @@ final class BleLinkServerImpl extends BleLinkBase implements TransportLinkServer
     final clientId = event.central.uuid.toString();
 
     if (!_connectedClients.containsKey(clientId)) {
+      // 1:1 only — reject a second central with insufficientResources.
       if (_connectedClients.isNotEmpty) {
         await _peripheralManager.respondWriteRequestWithError(
           event.request,

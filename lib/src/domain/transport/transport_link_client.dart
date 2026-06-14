@@ -1,7 +1,7 @@
 import '../models/device.dart';
 import 'transport_link.dart';
 
-/// Клиентский BLE-канал: discovery и connect.
+/// Client-side BLE link: scan and connect to peripherals (internal).
 abstract interface class TransportLinkClient implements TransportLink {
   Stream<List<Device>> get discoveredDevicesStream;
 

@@ -6,13 +6,13 @@ import '../../../domain/models/peer_endpoint.dart';
 import '../../../domain/transport/models/transport_session_state.dart';
 import '../../../domain/transport/transport_session.dart';
 
+/// Shared session FSM logic for client and server implementations.
 abstract base class BleSessionBase implements TransportSession {
   @override
   TransportSessionState? get currentConnectionState => _currentConnectionState;
 
   @override
-  Stream<TransportSessionState> get connectionStateStream =>
-      _connectionStateController.stream;
+  Stream<TransportSessionState> get connectionStateStream => _connectionStateController.stream;
 
   @override
   Future<void> dispose() async {
@@ -21,14 +21,12 @@ abstract base class BleSessionBase implements TransportSession {
   }
 
   TransportSessionState? _currentConnectionState;
-  final _connectionStateController =
-      StreamController<TransportSessionState>.broadcast();
+  final _connectionStateController = StreamController<TransportSessionState>.broadcast();
 
   @protected
   PeerEndpoint get localPeer {
     final localPeer = _currentConnectionState?.localPeer;
-    return localPeer ??
-        (throw UnsupportedError('Не проинициализирован localPeer'));
+    return localPeer ?? (throw UnsupportedError('localPeer is not initialized'));
   }
 
   @protected
@@ -40,15 +38,10 @@ abstract base class BleSessionBase implements TransportSession {
   void onConnectionInvitationReceived({required PeerEndpoint remotePeer}) {
     final state = _currentConnectionState;
     if (state is! TransportSessionDisconnected) {
-      throw UnsupportedError(
-        'Невозможен переход в AwaitingUserDecision из $state',
-      );
+      throw UnsupportedError('Cannot transition to AwaitingUserDecision from $state');
     }
     _setConnectionState(
-      TransportSessionAwaitingUserDecision(
-        localPeer: state.localPeer,
-        remotePeer: remotePeer,
-      ),
+      TransportSessionAwaitingUserDecision(localPeer: state.localPeer, remotePeer: remotePeer),
     );
   }
 
@@ -56,52 +49,37 @@ abstract base class BleSessionBase implements TransportSession {
   void onConnectionInvitationSent() {
     final state = _currentConnectionState;
     if (state is! TransportSessionDisconnected) {
-      throw UnsupportedError(
-        'Невозможен переход в AwaitingRemoteDecision из $state',
-      );
+      throw UnsupportedError('Cannot transition to AwaitingRemoteDecision from $state');
     }
-    _setConnectionState(
-      TransportSessionAwaitingRemoteDecision(localPeer: state.localPeer),
-    );
+    _setConnectionState(TransportSessionAwaitingRemoteDecision(localPeer: state.localPeer));
   }
 
   @protected
   void onConnectionRequestRemoteRejected() {
     final state = _currentConnectionState;
     if (state is! TransportSessionAwaitingRemoteDecision) {
-      throw UnsupportedError(
-        'Невозможен переход в Disconnected из $state',
-      );
+      throw UnsupportedError('Cannot transition to Disconnected from $state');
     }
-    _setConnectionState(
-      TransportSessionDisconnected(localPeer: state.localPeer),
-    );
+    _setConnectionState(TransportSessionDisconnected(localPeer: state.localPeer));
   }
 
   @protected
   void onConnectionRequestUserRejected() {
     final state = _currentConnectionState;
     if (state is! TransportSessionAwaitingUserDecision) {
-      throw UnsupportedError(
-        'Невозможен переход в Disconnected из $state',
-      );
+      throw UnsupportedError('Cannot transition to Disconnected from $state');
     }
-    _setConnectionState(
-      TransportSessionDisconnected(localPeer: state.localPeer),
-    );
+    _setConnectionState(TransportSessionDisconnected(localPeer: state.localPeer));
   }
 
   @protected
   void onConnectionRequestUserAccepted() {
     final state = _currentConnectionState;
     if (state is! TransportSessionAwaitingUserDecision) {
-      throw UnsupportedError('Невозможен переход в Connected из $state');
+      throw UnsupportedError('Cannot transition to Connected from $state');
     }
     _setConnectionState(
-      TransportSessionConnected(
-        localPeer: state.localPeer,
-        remotePeer: state.remotePeer,
-      ),
+      TransportSessionConnected(localPeer: state.localPeer, remotePeer: state.remotePeer),
     );
   }
 
@@ -109,13 +87,10 @@ abstract base class BleSessionBase implements TransportSession {
   void onConnectionRequestRemoteConfirmed({required PeerEndpoint remotePeer}) {
     final state = _currentConnectionState;
     if (state is! TransportSessionAwaitingRemoteDecision) {
-      throw UnsupportedError('Невозможен переход в Connected из $state');
+      throw UnsupportedError('Cannot transition to Connected from $state');
     }
     _setConnectionState(
-      TransportSessionConnected(
-        localPeer: state.localPeer,
-        remotePeer: remotePeer,
-      ),
+      TransportSessionConnected(localPeer: state.localPeer, remotePeer: remotePeer),
     );
   }
 
@@ -123,11 +98,9 @@ abstract base class BleSessionBase implements TransportSession {
   void onSessionDisconnected() {
     final state = _currentConnectionState;
     if (state is! TransportSessionConnected) {
-      throw UnsupportedError('Невозможен переход в Disconnected из $state');
+      throw UnsupportedError('Cannot transition to Disconnected from $state');
     }
-    _setConnectionState(
-      TransportSessionDisconnected(localPeer: state.localPeer),
-    );
+    _setConnectionState(TransportSessionDisconnected(localPeer: state.localPeer));
   }
 
   void _setConnectionState(TransportSessionState state) {
