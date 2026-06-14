@@ -1,14 +1,10 @@
-import 'dart:async';
-
 import '../domain/mappers/peer_connection_mapper.dart';
 import '../domain/mappers/peer_message_mapper.dart';
-import '../domain/models/device.dart';
 import '../domain/models/peer_connection_phase.dart';
 import '../domain/models/peer_endpoint.dart';
 import '../domain/models/peer_message.dart';
-import '../domain/transport/transport_session_client.dart';
-import '../domain/transport/transport_session_server.dart';
 import '../domain/transport/transport_facade.dart';
+import '../domain/transport/transport_session_server.dart';
 
 /// Host side of a 1:1 BLE peer session (advertises and accepts connections).
 abstract interface class PeerHost {

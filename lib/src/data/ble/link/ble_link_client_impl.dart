@@ -89,7 +89,7 @@ final class BleLinkClientImpl extends BleLinkBase implements TransportLinkClient
 
     try {
       _connectedPeripheral = peripheral;
-      await _centralManager.connect(peripheral!);
+      await _centralManager.connect(peripheral);
       final services = await _centralManager.discoverGATT(peripheral);
 
       var serviceFound = false;

@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import '../domain/mappers/peer_connection_mapper.dart';
 import '../domain/mappers/peer_message_mapper.dart';
 import '../domain/models/device.dart';
