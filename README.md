@@ -4,7 +4,7 @@
 
 **Scope:** 1:1 only (one host + one client). No Wi‑Fi or internet required.
 
-![Host–client connection flow: discover → invite → accept → connected (sendText / sendJson)](doc/assets/connection-flow.jpg)
+![Host–client connection flow: discover → invite → accept → connected (sendText / sendJson)](https://raw.githubusercontent.com/Viweld/ble_peer_session/main/doc/assets/connection-flow.jpg)
 
 ### Use cases
 

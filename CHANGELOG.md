@@ -1,3 +1,7 @@
+## 0.3.5
+
+- **Documentation:** fix README diagram on pub.dev — use absolute `raw.githubusercontent.com` URL (relative links break when default branch is `main`, not `master`).
+
 ## 0.3.4
 
 - **Documentation:** replace the ASCII host/client sequence diagram in the README with an illustrated connection-flow image (`doc/assets/connection-flow.jpg`).
