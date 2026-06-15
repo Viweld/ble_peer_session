@@ -1,3 +1,14 @@
+## 0.3.0
+
+- **Beginner API:** `Peer.create(appName: 'MyGame')` with auto-generated stable UUIDs (`BlePeerConfig.forApp`).
+- **`PeerUser`** replaces manual `PeerEndpoint` setup for most apps; **`PeerNearby`** for discovered hosts.
+- **Shortcuts:** `peer.host(localUser:)` and `peer.client(localUser:)`.
+- **Client:** `invite(PeerNearby)` alias; `nearbyHostsStream` over raw devices.
+- **Messaging:** `sendText()`, `textMessages`, `sendJson()`, `jsonMessages`; `PeerMessage.text` / `PeerMessage.app`.
+- **`SilentLogger`** when no logger is passed.
+- README: 15-second quick start examples first.
+- 0.2 APIs preserved via `startWithEndpoint`, `connect(device)`, explicit `config`.
+
 ## 0.2.0
 
 - **Breaking:** new public API — `Peer`, `PeerHost`, `PeerClient`, `PeerMessage`, `PeerException`, `PeerErrorCode`, `PeerConnectionPhase`, `PeerAdapterStatus`.

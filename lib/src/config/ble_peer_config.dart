@@ -1,3 +1,5 @@
+import 'ble_peer_uuid_generator.dart';
+
 /// BLE P2P session configuration (service UUIDs and app identifier).
 final class BlePeerConfig {
   const BlePeerConfig({
@@ -13,4 +15,9 @@ final class BlePeerConfig {
   final String characteristicUuid;
   final String deviceNamePrefix;
   final int protocolVersion;
+
+  /// Stable UUIDs derived from [appName]. Same app name → same UUIDs on every device.
+  factory BlePeerConfig.forApp(String appName, {String deviceNamePrefix = ''}) {
+    return BlePeerUuidGenerator.configFor(appName, deviceNamePrefix: deviceNamePrefix);
+  }
 }

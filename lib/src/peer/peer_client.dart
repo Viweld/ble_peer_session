@@ -4,25 +4,42 @@ import '../domain/models/device.dart';
 import '../domain/models/peer_connection_phase.dart';
 import '../domain/models/peer_endpoint.dart';
 import '../domain/models/peer_message.dart';
+import '../domain/models/peer_nearby.dart';
+import '../domain/models/peer_user.dart';
 import '../domain/transport/transport_session_client.dart';
 import '../domain/transport/transport_facade.dart';
+import 'peer_session_messaging.dart';
 
 /// Client side of a 1:1 BLE peer session (discovers hosts and connects).
-abstract interface class PeerClient {
+abstract interface class PeerClient implements PeerSessionMessaging {
+  /// Nearby hosts found during scanning.
+  Stream<List<PeerNearby>> get nearbyHostsStream;
+
+  /// @nodoc
   Stream<List<Device>> get discoveredDevicesStream;
 
   Stream<PeerConnectionInfo?> get connectionStream;
 
+  @override
   Stream<PeerMessage> get messagesStream;
 
-  Future<void> startDiscovery({required PeerEndpoint localPeer});
+  /// Starts scanning for nearby hosts.
+  Future<void> startDiscovery({required PeerUser localUser});
+
+  /// Starts scanning using a pre-built [PeerEndpoint] (advanced).
+  Future<void> startDiscoveryWithEndpoint({required PeerEndpoint localPeer});
 
   Future<void> stopDiscovery();
 
   Future<void> refreshDiscovery();
 
+  /// Connects and sends a session invite to [host].
+  Future<void> invite(PeerNearby host);
+
+  /// Connects using a raw [Device] (advanced).
   Future<void> connect(Device device);
 
+  @override
   Future<void> send(PeerMessage message);
 
   Future<void> disconnect();
@@ -36,6 +53,16 @@ final class PeerClientImpl implements PeerClient {
   final TransportFacade _facade;
   final TransportSessionClient _client;
 
+  PeerEndpoint? _localEndpoint;
+
+  @override
+  PeerEndpoint? get localEndpoint => _localEndpoint;
+
+  @override
+  Stream<List<PeerNearby>> get nearbyHostsStream => _client.discoveredDevicesStream.map(
+    (List<Device> devices) => devices.map(PeerNearby.fromDevice).toList(growable: false),
+  );
+
   @override
   Stream<List<Device>> get discoveredDevicesStream => _client.discoveredDevicesStream;
 
@@ -48,7 +75,12 @@ final class PeerClientImpl implements PeerClient {
       _facade.messagesStream.map(PeerMessageMapper.fromTransport);
 
   @override
-  Future<void> startDiscovery({required PeerEndpoint localPeer}) async {
+  Future<void> startDiscovery({required PeerUser localUser}) =>
+      startDiscoveryWithEndpoint(localPeer: localUser.toEndpoint());
+
+  @override
+  Future<void> startDiscoveryWithEndpoint({required PeerEndpoint localPeer}) async {
+    _localEndpoint = localPeer;
     await _facade.startClientTransportSession();
     await _client.startDiscovery(localPeer: localPeer);
   }
@@ -58,6 +90,9 @@ final class PeerClientImpl implements PeerClient {
 
   @override
   Future<void> refreshDiscovery() => _client.refreshDiscovery();
+
+  @override
+  Future<void> invite(PeerNearby host) => connect(host.device);
 
   @override
   Future<void> connect(Device device) => _client.connectToDevice(device);

@@ -1,11 +1,13 @@
 import '../config/ble_peer_config.dart';
 import '../data/services/peer_adapter_service_impl.dart';
 import '../domain/logger/logger.dart';
+import '../domain/logger/silent_logger.dart';
 import '../domain/mappers/peer_connection_mapper.dart';
 import '../domain/mappers/peer_message_mapper.dart';
 import '../domain/models/peer_adapter_status.dart';
 import '../domain/models/peer_connection_phase.dart';
 import '../domain/models/peer_message.dart';
+import '../domain/models/peer_user.dart';
 import '../domain/services/bluetooth_permissions_service.dart';
 import '../module/ble_peer_session_module.dart';
 import 'peer_client.dart';
@@ -20,9 +22,31 @@ final class Peer {
   final BlePeerSessionModule _module;
   final PeerAdapterServiceImpl _adapterService;
 
-  /// Creates a [Peer] instance wired to the given BLE service UUIDs.
-  factory Peer.create({required BlePeerConfig config, required Logger logger}) {
-    final module = BlePeerSessionModule.create(config: config, logger: logger);
+  /// Creates a [Peer] instance.
+  ///
+  /// Beginner-friendly:
+  /// ```dart
+  /// final peer = Peer.create(appName: 'MyApp');
+  /// ```
+  ///
+  /// Advanced (custom UUIDs):
+  /// ```dart
+  /// final peer = Peer.create(config: myConfig, logger: myLogger);
+  /// ```
+  factory Peer.create({
+    String? appName,
+    BlePeerConfig? config,
+    Logger? logger,
+    String deviceNamePrefix = '',
+  }) {
+    if (config == null && appName == null) {
+      throw ArgumentError('Provide appName or config.');
+    }
+
+    final BlePeerConfig resolvedConfig =
+        config ?? BlePeerConfig.forApp(appName!, deviceNamePrefix: deviceNamePrefix);
+    final Logger resolvedLogger = logger ?? const SilentLogger();
+    final module = BlePeerSessionModule.create(config: resolvedConfig, logger: resolvedLogger);
     return Peer._(module: module, adapterService: PeerAdapterServiceImpl());
   }
 
@@ -51,6 +75,20 @@ final class Peer {
   /// Creates a client role session. Only one role (host or client) is active at a time.
   Future<PeerClient> createClient() async {
     return PeerClientImpl(facade: _module.transportFacade, client: _module.transportSessionClient);
+  }
+
+  /// Shortcut: create host and start waiting for a connection.
+  Future<PeerHost> host({required PeerUser localUser}) async {
+    final PeerHost session = await createHost();
+    await session.start(localUser: localUser);
+    return session;
+  }
+
+  /// Shortcut: create client and start scanning for nearby hosts.
+  Future<PeerClient> client({required PeerUser localUser}) async {
+    final PeerClient session = await createClient();
+    await session.startDiscovery(localUser: localUser);
+    return session;
   }
 
   /// Releases BLE resources held by this [Peer] instance.
