@@ -36,9 +36,6 @@ final class BleMessengerImpl implements Messenger {
   Future<void> sendMessage(TransportMessage message) async {
     final json = jsonEncode(_codec.encode(message));
     final bytes = utf8.encode(json);
-    if (bytes.length > 480) {
-      _log.w('Message ${message.runtimeType} (${bytes.length} bytes) is near the MTU limit');
-    }
     await _connector.sendRawMessage(Uint8List.fromList(bytes));
   }
 

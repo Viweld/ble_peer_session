@@ -84,7 +84,7 @@ final class BleLinkServerImpl extends BleLinkBase implements TransportLinkServer
   }
 
   @override
-  Future<void> sendRawMessage(Uint8List data) async {
+  Future<void> sendPhysicalFrame(Uint8List frame) async {
     if (_connectedClients.isEmpty || _writeCharacteristic == null) {
       _log.w('No connected centrals to notify');
       return;
@@ -95,7 +95,7 @@ final class BleLinkServerImpl extends BleLinkBase implements TransportLinkServer
         await _peripheralManager.notifyCharacteristic(
           client.value,
           _writeCharacteristic!,
-          value: data,
+          value: frame,
         );
       } catch (e) {
         _log.e('Failed to notify central ${client.key}: $e');

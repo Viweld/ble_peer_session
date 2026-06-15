@@ -135,7 +135,7 @@ final class BleLinkClientImpl extends BleLinkBase implements TransportLinkClient
   }
 
   @override
-  Future<void> sendRawMessage(Uint8List data) async {
+  Future<void> sendPhysicalFrame(Uint8List frame) async {
     if (_connectedPeripheral == null || _writeCharacteristic == null) {
       throwPeer(PeerErrorCode.sessionNotConnected);
     }
@@ -144,7 +144,7 @@ final class BleLinkClientImpl extends BleLinkBase implements TransportLinkClient
       await _centralManager.writeCharacteristic(
         _connectedPeripheral!,
         _writeCharacteristic!,
-        value: data,
+        value: frame,
         type: GATTCharacteristicWriteType.withoutResponse,
       );
     } on Object catch (e, stackTrace) {

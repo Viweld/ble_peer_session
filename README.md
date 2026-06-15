@@ -70,7 +70,9 @@ No UUIDs. No `PeerEndpoint`. No `type`/`payload` unless you need custom game dat
 6. [Bluetooth adapter](#bluetooth-adapter)
 7. [Errors](#errors)
 8. [Android setup](#android-setup)
-9. [Migration guides](#migration-guides)
+9. [Message framing](#message-framing)
+10. [Example app](#example-app)
+11. [Migration guides](#migration-guides)
 
 ---
 
@@ -231,6 +233,48 @@ Add to `AndroidManifest.xml`:
 <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
 <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
 ```
+
+---
+
+## Message framing
+
+One GATT write/notify carries one **frame**. Logical JSON messages larger than the effective MTU are split automatically on the link layer — you do not need to chunk in app code.
+
+| Limit | Default |
+|-------|---------|
+| Chunk payload | 480 bytes |
+| Max logical message | 256 KiB |
+
+Oversized sends throw `PeerException` with `PeerErrorCode.payloadTooLarge`. Corrupt or incomplete frames emit `PeerErrorCode.messageDecodeFailed`.
+
+Wire layout (big-endian):
+
+```
+[version:1][flags:1][messageId:2][chunkIndex:2][totalChunks:2][payload…]
+```
+
+Legacy peers that send raw JSON without the framing header (`version != 0x01`) are still accepted on receive.
+
+---
+
+## Example app
+
+`example/minimal_chat` demonstrates host/client roles and text chat with zero custom UUID setup.
+
+```bash
+cd example/minimal_chat
+flutter pub get
+flutter run
+```
+
+On two physical devices:
+
+1. Install the app on both phones and grant Bluetooth permissions.
+2. Device A: **Host — wait for friend**.
+3. Device B: **Client — find host**, tap the discovered host.
+4. Host auto-accepts the invite; send messages both ways.
+
+Same `appName` (`MinimalChat` in the example) is required so both sides share service UUIDs.
 
 ---
 

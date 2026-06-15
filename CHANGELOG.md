@@ -1,3 +1,10 @@
+## 0.3.1
+
+- **Framing:** logical messages larger than the BLE MTU are split and reassembled on the link layer (`BleFrameCodec`, `BleFrameAssembler`).
+- **Limits:** default chunk payload 480 bytes, max logical message 256 KiB; legacy unframed payloads still accepted on receive.
+- **Tests:** unit tests for fragment/reassemble, oversized payload, corrupt frames, legacy passthrough.
+- **Example:** `example/minimal_chat` — host/client role picker and bidirectional text chat.
+
 ## 0.3.0
 
 - **Beginner API:** `Peer.create(appName: 'MyGame')` with auto-generated stable UUIDs (`BlePeerConfig.forApp`).
