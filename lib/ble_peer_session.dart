@@ -8,6 +8,8 @@ export 'src/domain/logger/silent_logger.dart';
 export 'src/domain/models/device.dart';
 export 'src/domain/models/peer_adapter_status.dart';
 export 'src/domain/models/peer_connection_phase.dart';
+export 'src/domain/models/peer_disconnect_info.dart';
+export 'src/domain/models/peer_disconnect_reason.dart';
 export 'src/domain/models/peer_endpoint.dart';
 export 'src/domain/models/peer_identity.dart';
 export 'src/domain/models/peer_message.dart';

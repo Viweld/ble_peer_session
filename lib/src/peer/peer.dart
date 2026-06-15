@@ -3,9 +3,11 @@ import '../data/services/peer_adapter_service_impl.dart';
 import '../domain/logger/logger.dart';
 import '../domain/logger/silent_logger.dart';
 import '../domain/mappers/peer_connection_mapper.dart';
+import '../domain/mappers/peer_disconnect_mapper.dart';
 import '../domain/mappers/peer_message_mapper.dart';
 import '../domain/models/peer_adapter_status.dart';
 import '../domain/models/peer_connection_phase.dart';
+import '../domain/models/peer_disconnect_info.dart';
 import '../domain/models/peer_message.dart';
 import '../domain/models/peer_user.dart';
 import '../domain/services/bluetooth_permissions_service.dart';
@@ -59,6 +61,10 @@ final class Peer {
   /// Emits connection lifecycle updates for the active role (host or client).
   Stream<PeerConnectionInfo?> get connectionStream =>
       _module.transportFacade.connectionStateStream.map(PeerConnectionMapper.fromSessionState);
+
+  /// Emits when an established session ends (link loss, timeout, peer/user disconnect).
+  Stream<PeerDisconnectInfo> get disconnectStream => _module.transportFacade.disconnectEventStream
+      .map(PeerDisconnectMapper.fromTransport);
 
   /// Emits all decoded messages (session handshake and application payloads).
   Stream<PeerMessage> get messagesStream =>

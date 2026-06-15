@@ -16,10 +16,18 @@ abstract base class BleLinkBase implements TransportLink {
     BleFrameCodec frameCodec = const BleFrameCodec(),
   }) : serviceUuid = UUID.fromString(serviceId),
        characteristicUuid = UUID.fromString(characteristicId),
-       _frameCodec = frameCodec;
+       _frameCodec = frameCodec {
+    _linkLostController = StreamController<void>.broadcast();
+  }
 
   @override
   Stream<Uint8List> get incomingRawMessageStream => _incomingRawMessageController.stream;
+
+  @override
+  Stream<void> get linkLostStream => _linkLostController.stream;
+
+  @override
+  bool get isPhysicallyConnected => false;
 
   @override
   Future<void> sendRawMessage(Uint8List data) async {
@@ -39,12 +47,15 @@ abstract base class BleLinkBase implements TransportLink {
     await onDispose();
     _frameAssembler.reset();
     await _incomingRawMessageController.close();
+    await _linkLostController.close();
   }
 
   final _incomingRawMessageController = StreamController<Uint8List>.broadcast();
+  late final StreamController<void> _linkLostController;
   final BleFrameCodec _frameCodec;
   final BleFrameAssembler _frameAssembler = BleFrameAssembler();
   int _outgoingMessageId = 0;
+  bool _intentionalDisconnect = false;
 
   @protected
   final UUID serviceUuid;
@@ -54,6 +65,25 @@ abstract base class BleLinkBase implements TransportLink {
 
   @protected
   final String appName;
+
+  @protected
+  bool get intentionalDisconnect => _intentionalDisconnect;
+
+  @protected
+  void beginIntentionalDisconnect() {
+    _intentionalDisconnect = true;
+  }
+
+  @protected
+  void resetIntentionalDisconnect() {
+    _intentionalDisconnect = false;
+  }
+
+  @protected
+  void emitLinkLost() {
+    if (_intentionalDisconnect || _linkLostController.isClosed) return;
+    _linkLostController.add(null);
+  }
 
   /// Sends one physical BLE frame (already framed by [sendRawMessage]).
   @protected

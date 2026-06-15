@@ -1,4 +1,5 @@
 import '../internal/transport_message.dart';
+import 'models/transport_session_disconnect_event.dart';
 import 'models/transport_session_state.dart';
 import 'transport_session.dart';
 import 'transport_session_client.dart';
@@ -9,6 +10,8 @@ abstract interface class TransportFacade {
   Stream<TransportMessage> get messagesStream;
 
   Stream<TransportSessionState> get connectionStateStream;
+
+  Stream<TransportSessionDisconnectEvent> get disconnectEventStream;
 
   TransportSession get transportSession;
 

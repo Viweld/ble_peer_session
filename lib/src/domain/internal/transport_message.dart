@@ -30,6 +30,16 @@ final class DisconnectionMessage extends TransportMessage {
   const DisconnectionMessage({required super.peerEndpoint});
 }
 
+@immutable
+final class HeartbeatPingMessage extends TransportMessage {
+  const HeartbeatPingMessage({required super.peerEndpoint});
+}
+
+@immutable
+final class HeartbeatPongMessage extends TransportMessage {
+  const HeartbeatPongMessage({required super.peerEndpoint});
+}
+
 /// Application payload on the wire before public [PeerMessage] mapping.
 @immutable
 final class AppTransportMessage extends TransportMessage {

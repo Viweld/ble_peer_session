@@ -1,7 +1,8 @@
 import 'dart:async';
 
-import '../../../domain/models/peer_endpoint.dart';
 import '../../../domain/internal/transport_message.dart';
+import '../../../domain/models/peer_disconnect_reason.dart';
+import '../../../domain/models/peer_endpoint.dart';
 import '../../../domain/transport/messenger.dart';
 import '../../../domain/transport/models/transport_session_state.dart';
 import '../../../domain/transport/transport_session_server.dart';
@@ -12,6 +13,7 @@ final class BleSessionServerImpl extends BleSessionBase implements TransportSess
   BleSessionServerImpl({required BleLinkServerImpl link, required Messenger messenger})
     : _link = link,
       _messenger = messenger {
+    bindLinkLostStream(_link.linkLostStream);
     _unhandledMessagesSubscription = _messenger.messagesStream.listen(_messagesHandler);
     _handledMessagesController = StreamController<TransportMessage>.broadcast();
   }
@@ -57,15 +59,32 @@ final class BleSessionServerImpl extends BleSessionBase implements TransportSess
 
     switch (state) {
       case TransportSessionConnected():
-        await _messenger.sendMessage(DisconnectionMessage(peerEndpoint: localPeer));
-        await _link.disconnect();
-        onSessionDisconnected();
+        await handleConnectedDisconnect(
+          PeerDisconnectReason.userDisconnect,
+          sendProtocolMessage: true,
+        );
       case TransportSessionAwaitingUserDecision():
         await rejectInvitation();
       case TransportSessionDisconnected():
       case TransportSessionAwaitingRemoteDecision():
         await stopAdvertising();
     }
+  }
+
+  @override
+  Future<void> sendGracefulDisconnectMessage() async {
+    await _messenger.sendMessage(DisconnectionMessage(peerEndpoint: localPeer));
+  }
+
+  @override
+  Future<void> tearDownPhysicalLink() async {
+    await _link.disconnect();
+  }
+
+  @override
+  Future<void> sendHeartbeatPing() async {
+    if (currentConnectionState is! TransportSessionConnected) return;
+    await _messenger.sendMessage(HeartbeatPingMessage(peerEndpoint: localPeer));
   }
 
   @override
@@ -78,6 +97,10 @@ final class BleSessionServerImpl extends BleSessionBase implements TransportSess
 
   Future<void> _messagesHandler(TransportMessage event) async {
     if (_handledMessagesController.isClosed) return;
+
+    if (await _handleInternalMessage(event)) return;
+
+    recordSessionActivity();
     _handledMessagesController.add(event);
 
     switch (event) {
@@ -85,9 +108,23 @@ final class BleSessionServerImpl extends BleSessionBase implements TransportSess
         onConnectionInvitationReceived(remotePeer: peerEndpoint);
       case DisconnectionMessage():
         await _link.disconnect();
-        onSessionDisconnected();
+        onSessionDisconnected(reason: PeerDisconnectReason.peerDisconnect);
       default:
         break;
+    }
+  }
+
+  Future<bool> _handleInternalMessage(TransportMessage event) async {
+    switch (event) {
+      case HeartbeatPingMessage():
+        recordSessionActivity();
+        await _messenger.sendMessage(HeartbeatPongMessage(peerEndpoint: localPeer));
+        return true;
+      case HeartbeatPongMessage():
+        recordSessionActivity();
+        return true;
+      default:
+        return false;
     }
   }
 }

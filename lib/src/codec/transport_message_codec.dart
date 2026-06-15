@@ -38,6 +38,18 @@ final class TransportMessageCodec {
         _typeKey: 'termination',
         _peerKey: peer,
       },
+      HeartbeatPingMessage() => {
+        _versionKey: 1,
+        _kindKey: 'session',
+        _typeKey: 'heartbeat_ping',
+        _peerKey: peer,
+      },
+      HeartbeatPongMessage() => {
+        _versionKey: 1,
+        _kindKey: 'session',
+        _typeKey: 'heartbeat_pong',
+        _peerKey: peer,
+      },
       AppTransportMessage(:final type, :final payload) => {
         _versionKey: 1,
         _kindKey: 'app',
@@ -66,6 +78,8 @@ final class TransportMessageCodec {
       'acceptance' => AcceptanceMessage(peerEndpoint: peer),
       'rejection' => RejectionMessage(peerEndpoint: peer),
       'termination' => DisconnectionMessage(peerEndpoint: peer),
+      'heartbeat_ping' => HeartbeatPingMessage(peerEndpoint: peer),
+      'heartbeat_pong' => HeartbeatPongMessage(peerEndpoint: peer),
       _ => throw FormatException('Unknown session message type: $type'),
     };
   }

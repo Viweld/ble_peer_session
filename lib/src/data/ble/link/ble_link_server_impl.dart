@@ -24,7 +24,12 @@ final class BleLinkServerImpl extends BleLinkBase implements TransportLinkServer
   final _peripheralManager = PeripheralManager();
   GATTCharacteristic? _writeCharacteristic;
   StreamSubscription<GATTCharacteristicWriteRequestedEventArgs>? _writeRequestSubscription;
+  StreamSubscription<CentralConnectionStateChangedEventArgs>? _connectionStateSubscription;
+  StreamSubscription<GATTCharacteristicNotifyStateChangedEventArgs>? _notifyStateSubscription;
   final Map<String, Central> _connectedClients = {};
+
+  @override
+  bool get isPhysicallyConnected => _connectedClients.isNotEmpty;
 
   @override
   Future<void> startAdvertisingAs({required String deviceName}) async {
@@ -58,6 +63,21 @@ final class BleLinkServerImpl extends BleLinkBase implements TransportLinkServer
         _peripheralEventHandler,
       );
 
+      _connectionStateSubscription = _peripheralManager.connectionStateChanged.listen((event) {
+        if (event.state != ConnectionState.disconnected) return;
+        final String centralId = event.central.uuid.toString();
+        if (!_connectedClients.containsKey(centralId)) return;
+        _handleGattDisconnected();
+      });
+
+      _notifyStateSubscription = _peripheralManager.characteristicNotifyStateChanged.listen((event) {
+        if (event.state) return;
+        if (event.characteristic.uuid != super.characteristicUuid) return;
+        final String centralId = event.central.uuid.toString();
+        if (!_connectedClients.containsKey(centralId)) return;
+        _handleGattDisconnected();
+      });
+
       await _peripheralManager.startAdvertising(
         Advertisement(name: deviceName, serviceUUIDs: [super.serviceUuid]),
       );
@@ -78,6 +98,10 @@ final class BleLinkServerImpl extends BleLinkBase implements TransportLinkServer
       await _peripheralManager.stopAdvertising();
       await _writeRequestSubscription?.cancel();
       _writeRequestSubscription = null;
+      await _connectionStateSubscription?.cancel();
+      _connectionStateSubscription = null;
+      await _notifyStateSubscription?.cancel();
+      _notifyStateSubscription = null;
     } catch (e) {
       _log.e('Failed to stop advertising: $e');
     }
@@ -105,14 +129,26 @@ final class BleLinkServerImpl extends BleLinkBase implements TransportLinkServer
 
   @override
   Future<void> disconnect() async {
+    beginIntentionalDisconnect();
     _connectedClients.clear();
+    resetIntentionalDisconnect();
   }
 
   @override
   Future<void> onDispose() async {
     await _writeRequestSubscription?.cancel();
+    await _connectionStateSubscription?.cancel();
+    await _notifyStateSubscription?.cancel();
     await stopAdvertising();
-    await disconnect();
+    beginIntentionalDisconnect();
+    _connectedClients.clear();
+    resetIntentionalDisconnect();
+  }
+
+  void _handleGattDisconnected() {
+    if (intentionalDisconnect) return;
+    _connectedClients.clear();
+    emitLinkLost();
   }
 
   Future<void> _peripheralEventHandler(GATTCharacteristicWriteRequestedEventArgs event) async {

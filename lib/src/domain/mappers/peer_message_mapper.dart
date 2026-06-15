@@ -26,6 +26,9 @@ abstract final class PeerMessageMapper {
         type: type,
         payload: payload,
       ),
+      HeartbeatPingMessage() || HeartbeatPongMessage() => throw UnsupportedError(
+        'Heartbeat messages are internal transport-only',
+      ),
     };
   }
 

@@ -5,8 +5,8 @@ import 'package:ble_peer_session/src/domain/models/device.dart';
 import 'package:ble_peer_session/src/domain/models/peer_endpoint.dart';
 import 'package:ble_peer_session/src/domain/models/peer_identity.dart';
 import 'package:ble_peer_session/src/domain/internal/transport_message.dart';
+import 'package:ble_peer_session/src/domain/transport/models/transport_session_disconnect_event.dart';
 import 'package:ble_peer_session/src/domain/transport/models/transport_session_state.dart';
-import 'package:ble_peer_session/src/domain/transport/transport_session.dart';
 import 'package:ble_peer_session/src/domain/transport/transport_session_client.dart';
 import 'package:ble_peer_session/src/domain/transport/transport_session_server.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -83,6 +83,9 @@ final class FakeTransportSessionClient implements TransportSessionClient {
   Stream<TransportSessionState> get connectionStateStream => const Stream.empty();
 
   @override
+  Stream<TransportSessionDisconnectEvent> get disconnectEventStream => const Stream.empty();
+
+  @override
   Stream<TransportMessage> get messagesStream => const Stream.empty();
 
   @override
@@ -126,6 +129,9 @@ final class FakeTransportSessionServer implements TransportSessionServer {
 
   @override
   Stream<TransportSessionState> get connectionStateStream => const Stream.empty();
+
+  @override
+  Stream<TransportSessionDisconnectEvent> get disconnectEventStream => const Stream.empty();
 
   @override
   Stream<TransportMessage> get messagesStream => const Stream.empty();

@@ -1,3 +1,9 @@
+## 0.4.0
+
+- **Transport:** GATT disconnect detection (central/peripheral connection state callbacks).
+- **Transport:** Session heartbeat watchdog (5s ping, 15s inactivity timeout).
+- **API:** `Peer.disconnectStream` and `PeerDisconnectReason` for unified session-end events.
+
 ## 0.3.5
 
 - **Documentation:** fix README diagram on pub.dev — use absolute `raw.githubusercontent.com` URL (relative links break when default branch is `main`, not `master`).

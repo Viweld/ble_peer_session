@@ -34,6 +34,10 @@ final class BleLinkClientImpl extends BleLinkBase implements TransportLinkClient
 
   StreamSubscription<DiscoveredEventArgs>? _scanSubscription;
   StreamSubscription<GATTCharacteristicNotifiedEventArgs>? _dataSubscription;
+  StreamSubscription<PeripheralConnectionStateChangedEventArgs>? _connectionStateSubscription;
+
+  @override
+  bool get isPhysicallyConnected => _connectedPeripheral != null;
 
   @override
   Stream<List<Device>> get discoveredDevicesStream => _discoveredDevicesController.stream;
@@ -88,7 +92,17 @@ final class BleLinkClientImpl extends BleLinkBase implements TransportLinkClient
     }
 
     try {
+      resetIntentionalDisconnect();
       _connectedPeripheral = peripheral;
+      _connectionStateSubscription = _centralManager.connectionStateChanged.listen((event) {
+        final Peripheral? connected = _connectedPeripheral;
+        if (connected == null) return;
+        if (event.peripheral.uuid != connected.uuid) return;
+        if (event.state == ConnectionState.disconnected) {
+          _handleGattDisconnected();
+        }
+      });
+
       await _centralManager.connect(peripheral);
       final services = await _centralManager.discoverGATT(peripheral);
 
@@ -128,8 +142,7 @@ final class BleLinkClientImpl extends BleLinkBase implements TransportLinkClient
     } on PeerException {
       rethrow;
     } on Object catch (e, stackTrace) {
-      _connectedPeripheral = null;
-      _writeCharacteristic = null;
+      await _clearConnectionState();
       throwPeer(PeerErrorCode.connectionFailed, cause: e, stackTrace: stackTrace);
     }
   }
@@ -158,16 +171,9 @@ final class BleLinkClientImpl extends BleLinkBase implements TransportLinkClient
 
   @override
   Future<void> disconnect() async {
-    await _dataSubscription?.cancel();
-    _dataSubscription = null;
-    if (_connectedPeripheral == null) return;
-    try {
-      await _centralManager.disconnect(_connectedPeripheral!);
-    } catch (e) {
-      _log.e('Failed to disconnect: $e');
-    } finally {
-      _connectedPeripheral = null;
-    }
+    beginIntentionalDisconnect();
+    await _clearConnectionState();
+    resetIntentionalDisconnect();
   }
 
   @override
@@ -175,8 +181,34 @@ final class BleLinkClientImpl extends BleLinkBase implements TransportLinkClient
     await _discoveredDevicesController.close();
     await _scanSubscription?.cancel();
     await _dataSubscription?.cancel();
+    await _connectionStateSubscription?.cancel();
     await stopDiscovery();
-    await disconnect();
+    beginIntentionalDisconnect();
+    await _clearConnectionState();
+  }
+
+  void _handleGattDisconnected() {
+    if (intentionalDisconnect) return;
+    unawaited(_clearConnectionState());
+    emitLinkLost();
+  }
+
+  Future<void> _clearConnectionState() async {
+    await _dataSubscription?.cancel();
+    _dataSubscription = null;
+    await _connectionStateSubscription?.cancel();
+    _connectionStateSubscription = null;
+
+    final Peripheral? peripheral = _connectedPeripheral;
+    _connectedPeripheral = null;
+    _writeCharacteristic = null;
+
+    if (peripheral == null) return;
+    try {
+      await _centralManager.disconnect(peripheral);
+    } catch (e) {
+      _log.e('Failed to disconnect: $e');
+    }
   }
 
   bool _isOurApplication(Advertisement advertisement) {
@@ -223,8 +255,9 @@ final class BleLinkClientImpl extends BleLinkBase implements TransportLinkClient
   }
 
   Future<void> _resetConnection() async {
-    await disconnect();
-    _writeCharacteristic = null;
+    beginIntentionalDisconnect();
+    await _clearConnectionState();
+    resetIntentionalDisconnect();
     await Future<void>.delayed(const Duration(milliseconds: 500));
   }
 }
