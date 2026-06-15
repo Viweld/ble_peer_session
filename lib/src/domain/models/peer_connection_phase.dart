@@ -14,7 +14,11 @@ enum PeerConnectionPhase {
 /// Snapshot of the active peer session.
 @immutable
 final class PeerConnectionInfo {
-  const PeerConnectionInfo({required this.phase, required this.localPeer, this.remotePeer});
+  const PeerConnectionInfo({
+    required this.phase,
+    required this.localPeer,
+    this.remotePeer,
+  });
 
   final PeerConnectionPhase phase;
   final PeerEndpoint localPeer;

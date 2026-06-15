@@ -1,3 +1,9 @@
+## 0.4.1
+
+- **Pub score:** add standard `example/` layout for pub.dev (160/160 pub points).
+- **Documentation:** library dartdoc and `BlePeerConfig` field comments.
+- **Style:** `dart format` across `lib/` and `test/`; remove redundant `dart:typed_data` imports.
+
 ## 0.4.0
 
 - **Transport:** GATT disconnect detection (central/peripheral connection state callbacks).

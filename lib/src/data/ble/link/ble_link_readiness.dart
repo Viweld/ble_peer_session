@@ -13,7 +13,8 @@ final class BleLinkReadiness {
   static Future<void> ensurePermissions() async {
     if (await BluetoothPermissionsUtils.checkPermissions()) return;
 
-    final PermissionStatus status = await BluetoothPermissionsUtils.requestPermissions();
+    final PermissionStatus status =
+        await BluetoothPermissionsUtils.requestPermissions();
     if (status.isGranted) return;
 
     throwPeer(
@@ -23,7 +24,9 @@ final class BleLinkReadiness {
     );
   }
 
-  static Future<void> ensureManagerPoweredOn(BluetoothLowEnergyManager manager) async {
+  static Future<void> ensureManagerPoweredOn(
+    BluetoothLowEnergyManager manager,
+  ) async {
     await _resolveInitialState(manager);
 
     if (manager.state == BluetoothLowEnergyState.poweredOn) {
@@ -40,22 +43,31 @@ final class BleLinkReadiness {
     }
 
     final Completer<void> poweredOnCompleter = Completer<void>();
-    late final StreamSubscription<BluetoothLowEnergyStateChangedEventArgs> subscription;
-    subscription = manager.stateChanged.listen((BluetoothLowEnergyStateChangedEventArgs event) {
+    late final StreamSubscription<BluetoothLowEnergyStateChangedEventArgs>
+    subscription;
+    subscription = manager.stateChanged.listen((
+      BluetoothLowEnergyStateChangedEventArgs event,
+    ) {
       switch (event.state) {
         case BluetoothLowEnergyState.poweredOn:
           if (!poweredOnCompleter.isCompleted) poweredOnCompleter.complete();
         case BluetoothLowEnergyState.poweredOff:
           if (!poweredOnCompleter.isCompleted) {
-            poweredOnCompleter.completeError(PeerException(PeerErrorCode.bluetoothDisabled));
+            poweredOnCompleter.completeError(
+              PeerException(PeerErrorCode.bluetoothDisabled),
+            );
           }
         case BluetoothLowEnergyState.unsupported:
           if (!poweredOnCompleter.isCompleted) {
-            poweredOnCompleter.completeError(PeerException(PeerErrorCode.bluetoothUnsupported));
+            poweredOnCompleter.completeError(
+              PeerException(PeerErrorCode.bluetoothUnsupported),
+            );
           }
         case BluetoothLowEnergyState.unauthorized:
           if (!poweredOnCompleter.isCompleted) {
-            poweredOnCompleter.completeError(PeerException(PeerErrorCode.bluetoothUnauthorized));
+            poweredOnCompleter.completeError(
+              PeerException(PeerErrorCode.bluetoothUnauthorized),
+            );
           }
         case BluetoothLowEnergyState.unknown:
           break;
@@ -73,7 +85,9 @@ final class BleLinkReadiness {
     }
   }
 
-  static Future<void> _resolveInitialState(BluetoothLowEnergyManager manager) async {
+  static Future<void> _resolveInitialState(
+    BluetoothLowEnergyManager manager,
+  ) async {
     if (manager.state == BluetoothLowEnergyState.unauthorized) {
       await manager.authorize();
       await Future<void>.delayed(const Duration(milliseconds: 500));

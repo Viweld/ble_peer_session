@@ -11,7 +11,8 @@ import '../../../domain/transport/transport_link_client.dart';
 import 'ble_link_base.dart';
 import 'ble_link_readiness.dart';
 
-final class BleLinkClientImpl extends BleLinkBase implements TransportLinkClient {
+final class BleLinkClientImpl extends BleLinkBase
+    implements TransportLinkClient {
   BleLinkClientImpl({required Logger logger, required BlePeerConfig config})
     : _log = logger,
       _deviceNamePrefix = config.deviceNamePrefix,
@@ -34,13 +35,15 @@ final class BleLinkClientImpl extends BleLinkBase implements TransportLinkClient
 
   StreamSubscription<DiscoveredEventArgs>? _scanSubscription;
   StreamSubscription<GATTCharacteristicNotifiedEventArgs>? _dataSubscription;
-  StreamSubscription<PeripheralConnectionStateChangedEventArgs>? _connectionStateSubscription;
+  StreamSubscription<PeripheralConnectionStateChangedEventArgs>?
+  _connectionStateSubscription;
 
   @override
   bool get isPhysicallyConnected => _connectedPeripheral != null;
 
   @override
-  Stream<List<Device>> get discoveredDevicesStream => _discoveredDevicesController.stream;
+  Stream<List<Device>> get discoveredDevicesStream =>
+      _discoveredDevicesController.stream;
 
   @override
   Future<void> startDiscovery() async {
@@ -54,7 +57,11 @@ final class BleLinkClientImpl extends BleLinkBase implements TransportLinkClient
 
       _scanSubscription = _centralManager.discovered.listen((event) {
         final isOurApp = _isOurApplication(event.advertisement);
-        _processDiscoveredDevice(event.peripheral, event.advertisement, isOurApp);
+        _processDiscoveredDevice(
+          event.peripheral,
+          event.advertisement,
+          isOurApp,
+        );
       });
 
       await _centralManager.startDiscovery(serviceUUIDs: [super.serviceUuid]);
@@ -62,7 +69,11 @@ final class BleLinkClientImpl extends BleLinkBase implements TransportLinkClient
       rethrow;
     } on Object catch (e, stackTrace) {
       _log.e('Failed to start discovery: $e');
-      throwPeer(PeerErrorCode.discoveryFailed, cause: e, stackTrace: stackTrace);
+      throwPeer(
+        PeerErrorCode.discoveryFailed,
+        cause: e,
+        stackTrace: stackTrace,
+      );
     }
   }
 
@@ -94,14 +105,15 @@ final class BleLinkClientImpl extends BleLinkBase implements TransportLinkClient
     try {
       resetIntentionalDisconnect();
       _connectedPeripheral = peripheral;
-      _connectionStateSubscription = _centralManager.connectionStateChanged.listen((event) {
-        final Peripheral? connected = _connectedPeripheral;
-        if (connected == null) return;
-        if (event.peripheral.uuid != connected.uuid) return;
-        if (event.state == ConnectionState.disconnected) {
-          _handleGattDisconnected();
-        }
-      });
+      _connectionStateSubscription = _centralManager.connectionStateChanged
+          .listen((event) {
+            final Peripheral? connected = _connectedPeripheral;
+            if (connected == null) return;
+            if (event.peripheral.uuid != connected.uuid) return;
+            if (event.state == ConnectionState.disconnected) {
+              _handleGattDisconnected();
+            }
+          });
 
       await _centralManager.connect(peripheral);
       final services = await _centralManager.discoverGATT(peripheral);
@@ -114,19 +126,28 @@ final class BleLinkClientImpl extends BleLinkBase implements TransportLinkClient
         for (final characteristic in service.characteristics) {
           if (characteristic.uuid != super.characteristicUuid) continue;
 
-          if (characteristic.properties.contains(GATTCharacteristicProperty.notify)) {
+          if (characteristic.properties.contains(
+            GATTCharacteristicProperty.notify,
+          )) {
             await _centralManager.setCharacteristicNotifyState(
               peripheral,
               characteristic,
               state: true,
             );
             _dataSubscription = _centralManager.characteristicNotified
-                .where((args) => args.characteristic.uuid == super.characteristicUuid)
+                .where(
+                  (args) =>
+                      args.characteristic.uuid == super.characteristicUuid,
+                )
                 .listen((event) => translateIncomingData(event.value));
           }
 
-          if (characteristic.properties.contains(GATTCharacteristicProperty.write) ||
-              characteristic.properties.contains(GATTCharacteristicProperty.writeWithoutResponse)) {
+          if (characteristic.properties.contains(
+                GATTCharacteristicProperty.write,
+              ) ||
+              characteristic.properties.contains(
+                GATTCharacteristicProperty.writeWithoutResponse,
+              )) {
             _writeCharacteristic = characteristic;
           }
         }
@@ -137,13 +158,19 @@ final class BleLinkClientImpl extends BleLinkBase implements TransportLinkClient
         throwPeer(PeerErrorCode.serviceNotFound);
       }
 
-      await _centralManager.requestMTU(peripheral, mtu: 512).catchError((_) => 0);
+      await _centralManager
+          .requestMTU(peripheral, mtu: 512)
+          .catchError((_) => 0);
       await Future<void>.delayed(const Duration(milliseconds: 300));
     } on PeerException {
       rethrow;
     } on Object catch (e, stackTrace) {
       await _clearConnectionState();
-      throwPeer(PeerErrorCode.connectionFailed, cause: e, stackTrace: stackTrace);
+      throwPeer(
+        PeerErrorCode.connectionFailed,
+        cause: e,
+        stackTrace: stackTrace,
+      );
     }
   }
 
@@ -165,7 +192,11 @@ final class BleLinkClientImpl extends BleLinkBase implements TransportLinkClient
       if (_isGattError133(e)) {
         await _resetConnection();
       }
-      throwPeer(PeerErrorCode.messageSendFailed, cause: e, stackTrace: stackTrace);
+      throwPeer(
+        PeerErrorCode.messageSendFailed,
+        cause: e,
+        stackTrace: stackTrace,
+      );
     }
   }
 
@@ -227,7 +258,11 @@ final class BleLinkClientImpl extends BleLinkBase implements TransportLinkClient
     return false;
   }
 
-  void _processDiscoveredDevice(Peripheral peripheral, Advertisement advertisement, bool isOurApp) {
+  void _processDiscoveredDevice(
+    Peripheral peripheral,
+    Advertisement advertisement,
+    bool isOurApp,
+  ) {
     final deviceName = advertisement.name ?? peripheral.uuid.toString();
     final deviceId = peripheral.uuid.toString();
     _discoveredPeripherals[deviceId] = peripheral;
@@ -235,16 +270,27 @@ final class BleLinkClientImpl extends BleLinkBase implements TransportLinkClient
     if (_deviceNamePrefix.isNotEmpty) {
       cleanName = cleanName.replaceFirst(_deviceNamePrefix, '');
     }
-    final discovered = Device(id: deviceId, name: cleanName, isOurApp: isOurApp);
+    final discovered = Device(
+      id: deviceId,
+      name: cleanName,
+      isOurApp: isOurApp,
+    );
     if (_foundDevices.any((p) => p.id == discovered.id)) return;
-    isOurApp ? _foundDevices.insert(0, discovered) : _foundDevices.add(discovered);
+    isOurApp
+        ? _foundDevices.insert(0, discovered)
+        : _foundDevices.add(discovered);
     _discoveredDevicesController.add(List.unmodifiable(_foundDevices));
   }
 
   String _getCleanDeviceName(String deviceName, String appName) {
     if (!deviceName.contains(appName)) return deviceName;
-    var cleanName = deviceName.replaceAll(appName, '').replaceAll('🎮', '').trim();
-    return cleanName.startsWith('-') ? cleanName.substring(1).trim() : cleanName;
+    var cleanName = deviceName
+        .replaceAll(appName, '')
+        .replaceAll('🎮', '')
+        .trim();
+    return cleanName.startsWith('-')
+        ? cleanName.substring(1).trim()
+        : cleanName;
   }
 
   bool _isGattError133(Object e) {

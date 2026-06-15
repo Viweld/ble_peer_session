@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:typed_data';
 
 import 'package:bluetooth_low_energy/bluetooth_low_energy.dart';
 import 'package:flutter/foundation.dart';
@@ -21,7 +20,8 @@ abstract base class BleLinkBase implements TransportLink {
   }
 
   @override
-  Stream<Uint8List> get incomingRawMessageStream => _incomingRawMessageController.stream;
+  Stream<Uint8List> get incomingRawMessageStream =>
+      _incomingRawMessageController.stream;
 
   @override
   Stream<void> get linkLostStream => _linkLostController.stream;
@@ -36,7 +36,10 @@ abstract base class BleLinkBase implements TransportLink {
     }
 
     final int messageId = _nextOutgoingMessageId();
-    final List<Uint8List> frames = _frameCodec.fragment(data, messageId: messageId);
+    final List<Uint8List> frames = _frameCodec.fragment(
+      data,
+      messageId: messageId,
+    );
     for (final Uint8List frame in frames) {
       await sendPhysicalFrame(frame);
     }

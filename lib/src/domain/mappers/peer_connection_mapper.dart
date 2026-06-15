@@ -13,21 +13,26 @@ abstract final class PeerConnectionMapper {
         phase: PeerConnectionPhase.waitingForPeer,
         localPeer: localPeer,
       ),
-      TransportSessionAwaitingUserDecision(:final localPeer, :final remotePeer) =>
+      TransportSessionAwaitingUserDecision(
+        :final localPeer,
+        :final remotePeer,
+      ) =>
         PeerConnectionInfo(
           phase: PeerConnectionPhase.awaitingUserDecision,
           localPeer: localPeer,
           remotePeer: remotePeer,
         ),
-      TransportSessionAwaitingRemoteDecision(:final localPeer) => PeerConnectionInfo(
-        phase: PeerConnectionPhase.awaitingRemoteDecision,
-        localPeer: localPeer,
-      ),
-      TransportSessionConnected(:final localPeer, :final remotePeer) => PeerConnectionInfo(
-        phase: PeerConnectionPhase.connected,
-        localPeer: localPeer,
-        remotePeer: remotePeer,
-      ),
+      TransportSessionAwaitingRemoteDecision(:final localPeer) =>
+        PeerConnectionInfo(
+          phase: PeerConnectionPhase.awaitingRemoteDecision,
+          localPeer: localPeer,
+        ),
+      TransportSessionConnected(:final localPeer, :final remotePeer) =>
+        PeerConnectionInfo(
+          phase: PeerConnectionPhase.connected,
+          localPeer: localPeer,
+          remotePeer: remotePeer,
+        ),
     };
   }
 }

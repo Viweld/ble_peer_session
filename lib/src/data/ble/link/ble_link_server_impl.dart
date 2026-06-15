@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:typed_data';
 
 import 'package:bluetooth_low_energy/bluetooth_low_energy.dart';
 import 'package:flutter/services.dart';
@@ -11,7 +10,8 @@ import '../../../domain/transport/transport_link_server.dart';
 import 'ble_link_base.dart';
 import 'ble_link_readiness.dart';
 
-final class BleLinkServerImpl extends BleLinkBase implements TransportLinkServer {
+final class BleLinkServerImpl extends BleLinkBase
+    implements TransportLinkServer {
   BleLinkServerImpl({required Logger logger, required BlePeerConfig config})
     : _log = logger,
       super(
@@ -23,9 +23,12 @@ final class BleLinkServerImpl extends BleLinkBase implements TransportLinkServer
   final Logger _log;
   final _peripheralManager = PeripheralManager();
   GATTCharacteristic? _writeCharacteristic;
-  StreamSubscription<GATTCharacteristicWriteRequestedEventArgs>? _writeRequestSubscription;
-  StreamSubscription<CentralConnectionStateChangedEventArgs>? _connectionStateSubscription;
-  StreamSubscription<GATTCharacteristicNotifyStateChangedEventArgs>? _notifyStateSubscription;
+  StreamSubscription<GATTCharacteristicWriteRequestedEventArgs>?
+  _writeRequestSubscription;
+  StreamSubscription<CentralConnectionStateChangedEventArgs>?
+  _connectionStateSubscription;
+  StreamSubscription<GATTCharacteristicNotifyStateChangedEventArgs>?
+  _notifyStateSubscription;
   final Map<String, Central> _connectedClients = {};
 
   @override
@@ -46,7 +49,10 @@ final class BleLinkServerImpl extends BleLinkBase implements TransportLinkServer
           GATTCharacteristicProperty.write,
           GATTCharacteristicProperty.notify,
         ],
-        permissions: [GATTCharacteristicPermission.read, GATTCharacteristicPermission.write],
+        permissions: [
+          GATTCharacteristicPermission.read,
+          GATTCharacteristicPermission.write,
+        ],
         descriptors: [],
       );
 
@@ -59,24 +65,27 @@ final class BleLinkServerImpl extends BleLinkBase implements TransportLinkServer
 
       await _peripheralManager.addService(service);
 
-      _writeRequestSubscription = _peripheralManager.characteristicWriteRequested.listen(
-        _peripheralEventHandler,
-      );
+      _writeRequestSubscription = _peripheralManager
+          .characteristicWriteRequested
+          .listen(_peripheralEventHandler);
 
-      _connectionStateSubscription = _peripheralManager.connectionStateChanged.listen((event) {
-        if (event.state != ConnectionState.disconnected) return;
-        final String centralId = event.central.uuid.toString();
-        if (!_connectedClients.containsKey(centralId)) return;
-        _handleGattDisconnected();
-      });
+      _connectionStateSubscription = _peripheralManager.connectionStateChanged
+          .listen((event) {
+            if (event.state != ConnectionState.disconnected) return;
+            final String centralId = event.central.uuid.toString();
+            if (!_connectedClients.containsKey(centralId)) return;
+            _handleGattDisconnected();
+          });
 
-      _notifyStateSubscription = _peripheralManager.characteristicNotifyStateChanged.listen((event) {
-        if (event.state) return;
-        if (event.characteristic.uuid != super.characteristicUuid) return;
-        final String centralId = event.central.uuid.toString();
-        if (!_connectedClients.containsKey(centralId)) return;
-        _handleGattDisconnected();
-      });
+      _notifyStateSubscription = _peripheralManager
+          .characteristicNotifyStateChanged
+          .listen((event) {
+            if (event.state) return;
+            if (event.characteristic.uuid != super.characteristicUuid) return;
+            final String centralId = event.central.uuid.toString();
+            if (!_connectedClients.containsKey(centralId)) return;
+            _handleGattDisconnected();
+          });
 
       await _peripheralManager.startAdvertising(
         Advertisement(name: deviceName, serviceUUIDs: [super.serviceUuid]),
@@ -151,7 +160,9 @@ final class BleLinkServerImpl extends BleLinkBase implements TransportLinkServer
     emitLinkLost();
   }
 
-  Future<void> _peripheralEventHandler(GATTCharacteristicWriteRequestedEventArgs event) async {
+  Future<void> _peripheralEventHandler(
+    GATTCharacteristicWriteRequestedEventArgs event,
+  ) async {
     final clientId = event.central.uuid.toString();
 
     if (!_connectedClients.containsKey(clientId)) {

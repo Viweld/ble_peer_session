@@ -30,13 +30,28 @@ final class BlePeerSessionModule {
   final BluetoothStateService bluetoothStateService;
   final BluetoothPermissionsService bluetoothPermissionsService;
 
-  factory BlePeerSessionModule.create({required BlePeerConfig config, required Logger logger}) {
+  factory BlePeerSessionModule.create({
+    required BlePeerConfig config,
+    required Logger logger,
+  }) {
     final linkClient = BleLinkClientImpl(logger: logger, config: config);
     final linkServer = BleLinkServerImpl(logger: logger, config: config);
-    final messengerClient = BleMessengerImpl(connector: linkClient, logger: logger);
-    final messengerServer = BleMessengerImpl(connector: linkServer, logger: logger);
-    final sessionClient = BleSessionClientImpl(link: linkClient, messenger: messengerClient);
-    final sessionServer = BleSessionServerImpl(link: linkServer, messenger: messengerServer);
+    final messengerClient = BleMessengerImpl(
+      connector: linkClient,
+      logger: logger,
+    );
+    final messengerServer = BleMessengerImpl(
+      connector: linkServer,
+      logger: logger,
+    );
+    final sessionClient = BleSessionClientImpl(
+      link: linkClient,
+      messenger: messengerClient,
+    );
+    final sessionServer = BleSessionServerImpl(
+      link: linkServer,
+      messenger: messengerServer,
+    );
     final facade = BleTransportFacadeImpl(
       transportSessionClient: sessionClient,
       transportSessionServer: sessionServer,

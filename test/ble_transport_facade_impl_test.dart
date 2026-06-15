@@ -21,8 +21,10 @@ void main() {
     test(
       'startServerTransportSession does not throw when server session is uninitialized',
       () async {
-        final FakeTransportSessionClient clientSession = FakeTransportSessionClient();
-        final FakeTransportSessionServer serverSession = FakeTransportSessionServer();
+        final FakeTransportSessionClient clientSession =
+            FakeTransportSessionClient();
+        final FakeTransportSessionServer serverSession =
+            FakeTransportSessionServer();
 
         final BleTransportFacadeImpl facade = BleTransportFacadeImpl(
           transportSessionClient: clientSession,
@@ -37,8 +39,10 @@ void main() {
     test(
       'startClientTransportSession does not throw when server session is uninitialized',
       () async {
-        final FakeTransportSessionClient clientSession = FakeTransportSessionClient();
-        final FakeTransportSessionServer serverSession = FakeTransportSessionServer();
+        final FakeTransportSessionClient clientSession =
+            FakeTransportSessionClient();
+        final FakeTransportSessionServer serverSession =
+            FakeTransportSessionServer();
 
         final BleTransportFacadeImpl facade = BleTransportFacadeImpl(
           transportSessionClient: clientSession,
@@ -50,22 +54,27 @@ void main() {
       },
     );
 
-    test('startClientTransportSession resets active server session before role switch', () async {
-      final FakeTransportSessionClient clientSession = FakeTransportSessionClient();
-      final FakeTransportSessionServer serverSession = FakeTransportSessionServer(
-        initialState: TransportSessionDisconnected(localPeer: localPeer),
-      );
+    test(
+      'startClientTransportSession resets active server session before role switch',
+      () async {
+        final FakeTransportSessionClient clientSession =
+            FakeTransportSessionClient();
+        final FakeTransportSessionServer serverSession =
+            FakeTransportSessionServer(
+              initialState: TransportSessionDisconnected(localPeer: localPeer),
+            );
 
-      final BleTransportFacadeImpl facade = BleTransportFacadeImpl(
-        transportSessionClient: clientSession,
-        transportSessionServer: serverSession,
-      );
+        final BleTransportFacadeImpl facade = BleTransportFacadeImpl(
+          transportSessionClient: clientSession,
+          transportSessionServer: serverSession,
+        );
 
-      await facade.startClientTransportSession();
+        await facade.startClientTransportSession();
 
-      expect(serverSession.disconnectCallCount, 1);
-      expect(clientSession.disconnectCallCount, 0);
-    });
+        expect(serverSession.disconnectCallCount, 1);
+        expect(clientSession.disconnectCallCount, 0);
+      },
+    );
   });
 }
 
@@ -80,10 +89,12 @@ final class FakeTransportSessionClient implements TransportSessionClient {
   TransportSessionState? get currentConnectionState => _currentConnectionState;
 
   @override
-  Stream<TransportSessionState> get connectionStateStream => const Stream.empty();
+  Stream<TransportSessionState> get connectionStateStream =>
+      const Stream.empty();
 
   @override
-  Stream<TransportSessionDisconnectEvent> get disconnectEventStream => const Stream.empty();
+  Stream<TransportSessionDisconnectEvent> get disconnectEventStream =>
+      const Stream.empty();
 
   @override
   Stream<TransportMessage> get messagesStream => const Stream.empty();
@@ -110,7 +121,9 @@ final class FakeTransportSessionClient implements TransportSessionClient {
 
   @override
   Future<void> startDiscovery({required PeerEndpoint localPeer}) async {
-    _currentConnectionState = TransportSessionDisconnected(localPeer: localPeer);
+    _currentConnectionState = TransportSessionDisconnected(
+      localPeer: localPeer,
+    );
   }
 
   @override
@@ -128,10 +141,12 @@ final class FakeTransportSessionServer implements TransportSessionServer {
   TransportSessionState? get currentConnectionState => _currentConnectionState;
 
   @override
-  Stream<TransportSessionState> get connectionStateStream => const Stream.empty();
+  Stream<TransportSessionState> get connectionStateStream =>
+      const Stream.empty();
 
   @override
-  Stream<TransportSessionDisconnectEvent> get disconnectEventStream => const Stream.empty();
+  Stream<TransportSessionDisconnectEvent> get disconnectEventStream =>
+      const Stream.empty();
 
   @override
   Stream<TransportMessage> get messagesStream => const Stream.empty();
@@ -155,7 +170,9 @@ final class FakeTransportSessionServer implements TransportSessionServer {
 
   @override
   Future<void> startAdvertising({required PeerEndpoint localPeer}) async {
-    _currentConnectionState = TransportSessionDisconnected(localPeer: localPeer);
+    _currentConnectionState = TransportSessionDisconnected(
+      localPeer: localPeer,
+    );
   }
 
   @override

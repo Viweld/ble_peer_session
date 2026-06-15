@@ -61,7 +61,9 @@ final class TransportMessageCodec {
   }
 
   TransportMessage decode(Map<String, dynamic> json) {
-    final peer = PeerEndpointDto.fromJson(json[_peerKey] as Map<String, dynamic>).toDomain();
+    final peer = PeerEndpointDto.fromJson(
+      json[_peerKey] as Map<String, dynamic>,
+    ).toDomain();
     final type = json[_typeKey] as String;
     final kind = json[_kindKey] as String? ?? 'session';
 

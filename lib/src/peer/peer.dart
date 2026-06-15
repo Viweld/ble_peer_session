@@ -17,9 +17,11 @@ import 'peer_host.dart';
 
 /// Entry point for offline BLE 1:1 peer sessions.
 final class Peer {
-  Peer._({required BlePeerSessionModule module, required PeerAdapterServiceImpl adapterService})
-    : _module = module,
-      _adapterService = adapterService;
+  Peer._({
+    required BlePeerSessionModule module,
+    required PeerAdapterServiceImpl adapterService,
+  }) : _module = module,
+       _adapterService = adapterService;
 
   final BlePeerSessionModule _module;
   final PeerAdapterServiceImpl _adapterService;
@@ -46,9 +48,13 @@ final class Peer {
     }
 
     final BlePeerConfig resolvedConfig =
-        config ?? BlePeerConfig.forApp(appName!, deviceNamePrefix: deviceNamePrefix);
+        config ??
+        BlePeerConfig.forApp(appName!, deviceNamePrefix: deviceNamePrefix);
     final Logger resolvedLogger = logger ?? const SilentLogger();
-    final module = BlePeerSessionModule.create(config: resolvedConfig, logger: resolvedLogger);
+    final module = BlePeerSessionModule.create(
+      config: resolvedConfig,
+      logger: resolvedLogger,
+    );
     return Peer._(module: module, adapterService: PeerAdapterServiceImpl());
   }
 
@@ -56,31 +62,45 @@ final class Peer {
   PeerAdapterStatus get adapterStatus => _adapterService.currentStatus;
 
   /// Emits adapter status changes (disabled, unauthorized, enabled, etc.).
-  Stream<PeerAdapterStatus> get adapterStatusStream => _adapterService.statusStream;
+  Stream<PeerAdapterStatus> get adapterStatusStream =>
+      _adapterService.statusStream;
 
   /// Emits connection lifecycle updates for the active role (host or client).
-  Stream<PeerConnectionInfo?> get connectionStream =>
-      _module.transportFacade.connectionStateStream.map(PeerConnectionMapper.fromSessionState);
+  Stream<PeerConnectionInfo?> get connectionStream => _module
+      .transportFacade
+      .connectionStateStream
+      .map(PeerConnectionMapper.fromSessionState);
 
   /// Emits when an established session ends (link loss, timeout, peer/user disconnect).
-  Stream<PeerDisconnectInfo> get disconnectStream => _module.transportFacade.disconnectEventStream
+  Stream<PeerDisconnectInfo> get disconnectStream => _module
+      .transportFacade
+      .disconnectEventStream
       .map(PeerDisconnectMapper.fromTransport);
 
   /// Emits all decoded messages (session handshake and application payloads).
-  Stream<PeerMessage> get messagesStream =>
-      _module.transportFacade.messagesStream.map(PeerMessageMapper.fromTransport);
+  Stream<PeerMessage> get messagesStream => _module
+      .transportFacade
+      .messagesStream
+      .map(PeerMessageMapper.fromTransport);
 
   /// Runtime permission helper for Android 12+ BLE permissions.
-  BluetoothPermissionsService get permissions => _module.bluetoothPermissionsService;
+  BluetoothPermissionsService get permissions =>
+      _module.bluetoothPermissionsService;
 
   /// Creates a host role session. Only one role (host or client) is active at a time.
   Future<PeerHost> createHost() async {
-    return PeerHostImpl(facade: _module.transportFacade, server: _module.transportSessionServer);
+    return PeerHostImpl(
+      facade: _module.transportFacade,
+      server: _module.transportSessionServer,
+    );
   }
 
   /// Creates a client role session. Only one role (host or client) is active at a time.
   Future<PeerClient> createClient() async {
-    return PeerClientImpl(facade: _module.transportFacade, client: _module.transportSessionClient);
+    return PeerClientImpl(
+      facade: _module.transportFacade,
+      client: _module.transportSessionClient,
+    );
   }
 
   /// Shortcut: create host and start waiting for a connection.

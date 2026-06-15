@@ -7,7 +7,10 @@ final class PeerIdentityDto {
   final String displayName;
 
   factory PeerIdentityDto.fromJson(Map<String, dynamic> json) =>
-      PeerIdentityDto(id: json['id'] as String, displayName: json['display_name'] as String);
+      PeerIdentityDto(
+        id: json['id'] as String,
+        displayName: json['display_name'] as String,
+      );
 
   Map<String, dynamic> toJson() => {'id': id, 'display_name': displayName};
 

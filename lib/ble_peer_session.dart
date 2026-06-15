@@ -1,3 +1,7 @@
+/// Offline 1:1 peer sessions over BLE for Flutter.
+///
+/// Host/client model with invitation handshake and bidirectional messaging.
+/// See [Peer] for the main entry point.
 library;
 
 export 'src/config/ble_peer_config.dart';

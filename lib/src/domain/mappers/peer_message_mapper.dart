@@ -21,12 +21,10 @@ abstract final class PeerMessageMapper {
         sender: peerEndpoint,
         type: PeerMessageTypes.sessionDisconnect,
       ),
-      AppTransportMessage(:final peerEndpoint, :final type, :final payload) => PeerMessage(
-        sender: peerEndpoint,
-        type: type,
-        payload: payload,
-      ),
-      HeartbeatPingMessage() || HeartbeatPongMessage() => throw UnsupportedError(
+      AppTransportMessage(:final peerEndpoint, :final type, :final payload) =>
+        PeerMessage(sender: peerEndpoint, type: type, payload: payload),
+      HeartbeatPingMessage() ||
+      HeartbeatPongMessage() => throw UnsupportedError(
         'Heartbeat messages are internal transport-only',
       ),
     };
@@ -34,10 +32,18 @@ abstract final class PeerMessageMapper {
 
   static TransportMessage toTransport(PeerMessage message) {
     return switch (message.type) {
-      PeerMessageTypes.sessionInvite => InvitationMessage(peerEndpoint: message.sender),
-      PeerMessageTypes.sessionAccept => AcceptanceMessage(peerEndpoint: message.sender),
-      PeerMessageTypes.sessionReject => RejectionMessage(peerEndpoint: message.sender),
-      PeerMessageTypes.sessionDisconnect => DisconnectionMessage(peerEndpoint: message.sender),
+      PeerMessageTypes.sessionInvite => InvitationMessage(
+        peerEndpoint: message.sender,
+      ),
+      PeerMessageTypes.sessionAccept => AcceptanceMessage(
+        peerEndpoint: message.sender,
+      ),
+      PeerMessageTypes.sessionReject => RejectionMessage(
+        peerEndpoint: message.sender,
+      ),
+      PeerMessageTypes.sessionDisconnect => DisconnectionMessage(
+        peerEndpoint: message.sender,
+      ),
       _ => AppTransportMessage(
         peerEndpoint: message.sender,
         type: message.type,

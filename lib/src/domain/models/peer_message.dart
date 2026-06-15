@@ -34,7 +34,10 @@ final class PeerMessage {
   }
 
   /// Plain-text chat message (`PeerMessageTypes.appText`).
-  factory PeerMessage.text({required PeerEndpoint sender, required String text}) {
+  factory PeerMessage.text({
+    required PeerEndpoint sender,
+    required String text,
+  }) {
     return PeerMessage(
       sender: sender,
       type: PeerMessageTypes.appText,
