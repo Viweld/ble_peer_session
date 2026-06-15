@@ -1,3 +1,7 @@
+## 0.3.3
+
+- **Documentation:** refined README — use cases, host/client diagrams, role-based quick start, compact core model, reordered sections (example app before errors), internals isolated for contributors.
+
 ## 0.3.2
 
 - **Documentation:** restructured README (TL;DR first, single connection flow, grouped sections); `doc/README.md` index; updated migration guides, error codes, and `example/minimal_chat` README.
