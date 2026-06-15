@@ -1,3 +1,7 @@
+## 0.3.4
+
+- **Documentation:** replace the ASCII host/client sequence diagram in the README with an illustrated connection-flow image (`doc/assets/connection-flow.jpg`).
+
 ## 0.3.3
 
 - **Documentation:** refined README — use cases, host/client diagrams, role-based quick start, compact core model, reordered sections (example app before errors), internals isolated for contributors.

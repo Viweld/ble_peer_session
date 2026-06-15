@@ -4,25 +4,7 @@
 
 **Scope:** 1:1 only (one host + one client). No Wi‑Fi or internet required.
 
-```
-┌─────────────┐                     ┌─────────────┐
-│    Alice    │                     │     Bob     │
-│    Host     │                     │   Client    │
-└──────┬──────┘                     └──────┬──────┘
-       │                                   │
-       │       discover nearby host        │
-       │◄──────────────────────────────────│
-       │                                   │
-       │             invite                │
-       │◄──────────────────────────────────│
-       │                                   │
-       │            accept()               │
-       │──────────────────────────────────►│
-       │                                   │
-       └──────────── connected ────────────┘
-                        │
-                sendText / sendJson
-```
+![Host–client connection flow: discover → invite → accept → connected (sendText / sendJson)](doc/assets/connection-flow.jpg)
 
 ### Use cases
 
