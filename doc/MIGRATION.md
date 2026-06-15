@@ -2,6 +2,10 @@
 
 Version 0.2.0 is a **breaking** release that simplifies the public API.
 
+See also: [main README](../README.md) · [0.2 → 0.3 guide](MIGRATION_0.3.md) · [doc index](README.md)
+
+---
+
 ## Summary
 
 | 0.1.x | 0.2.0 |
@@ -12,6 +16,10 @@ Version 0.2.0 is a **breaking** release that simplifies the public API.
 | `TransportSessionState` | `PeerConnectionInfo` + `PeerConnectionPhase` |
 | `BluetoothDisabledException`, … | `PeerException` + `PeerErrorCode` |
 | `BluetoothStateService.enableBluetooth()` | Not used by package; observe `PeerAdapterStatus` |
+
+> **On 0.3+:** use [MIGRATION_0.3.md](MIGRATION_0.3.md) for `Peer.create(appName:)`, `peer.host()` / `peer.client()`, and `invite()`.
+
+---
 
 ## Entry point
 
@@ -31,6 +39,8 @@ final host = await peer.createHost();
 await host.start(localPeer: localPeer);
 ```
 
+---
+
 ## Messages
 
 **Before:**
@@ -49,15 +59,17 @@ facade.messagesStream.listen((message) {
 **After:**
 
 ```dart
-peer.messagesStream.listen((message) {
+host.messagesStream.listen((message) {
   switch (message.type) {
     case PeerMessageTypes.sessionInvite:
-      // message.sender is remote peer
+      await host.accept();
     case 'game.move':
       // application payload in message.payload
   }
 });
 ```
+
+---
 
 ## Connection state
 
@@ -75,12 +87,14 @@ facade.connectionStateStream.listen((state) {
 **After:**
 
 ```dart
-peer.connectionStream.listen((info) {
+host.connectionStream.listen((info) {
   if (info?.phase == PeerConnectionPhase.connected) {
     final remote = info!.remotePeer;
   }
 });
 ```
+
+---
 
 ## Errors
 
@@ -97,6 +111,10 @@ peer.connectionStream.listen((info) {
   if (e.code == PeerErrorCode.bluetoothDisabled) {
 ```
 
+Full code list: [ERROR_CODES.md](ERROR_CODES.md).
+
+---
+
 ## Removed exports
 
 These types are internal in 0.2.0 and must not be imported from app code:
@@ -106,6 +124,8 @@ These types are internal in 0.2.0 and must not be imported from app code:
 - `BluetoothStateService`, `BlePeerSessionModule`
 - `bluetooth_exceptions.dart`
 
+---
+
 ## Android permissions
 
-Behavior unchanged: request `BLUETOOTH_SCAN`, `CONNECT`, and `ADVERTISE` before host/client operations. Use `peer.permissions.checkPermissions()`.
+Unchanged: request `BLUETOOTH_SCAN`, `CONNECT`, and `ADVERTISE` before host/client operations. See [Platform setup](../README.md#5-platform-setup).

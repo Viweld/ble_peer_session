@@ -1,3 +1,7 @@
+## 0.3.2
+
+- **Documentation:** restructured README (TL;DR first, single connection flow, grouped sections); `doc/README.md` index; updated migration guides, error codes, and `example/minimal_chat` README.
+
 ## 0.3.1
 
 - **Framing:** logical messages larger than the BLE MTU are split and reassembled on the link layer (`BleFrameCodec`, `BleFrameAssembler`).
@@ -13,7 +17,7 @@
 - **Client:** `invite(PeerNearby)` alias; `nearbyHostsStream` over raw devices.
 - **Messaging:** `sendText()`, `textMessages`, `sendJson()`, `jsonMessages`; `PeerMessage.text` / `PeerMessage.app`.
 - **`SilentLogger`** when no logger is passed.
-- README: 15-second quick start examples first.
+- README: beginner API quick start.
 - 0.2 APIs preserved via `startWithEndpoint`, `connect(device)`, explicit `config`.
 
 ## 0.2.0

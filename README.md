@@ -1,18 +1,93 @@
 # ble_peer_session
 
-Offline BLE peer-to-peer sessions for Flutter: discovery, consent handshake, and bidirectional messaging for local games and chat.
+> Offline 1:1 peer sessions over BLE (host / client model)
 
 **Scope:** 1:1 only (one host + one client). No Wi‑Fi or internet required.
 
 ---
 
-## 15-second start
+## TL;DR
 
-### Host — wait for a friend
+1. **Host** waits
+2. **Client** scans
+3. **Client** sends invite
+4. **Host** `accept()` → connected
+5. `sendText` / `sendJson`
+
+| Step | Host | Client |
+|------|------|--------|
+| Start | `peer.host(localUser: …)` | `peer.client(localUser: …)` |
+| Find peer | waits | `nearbyHostsStream` |
+| Connect | `accept()` on invite | `invite(host)` |
+| Chat | `sendText` / `sendJson` | same |
+
+### Common misconception
+
+This is **not** a socket connection. It is an invitation-based session over BLE advertising + GATT.
+
+### Design principles
+
+- People-first (host / client)
+- No BLE exposure in the basic API
+- Opinionated defaults
+
+---
+
+## Table of contents
+
+1. [Quick start](#1-quick-start)
+2. [Core model](#2-core-model)
+3. [API (Level 1)](#3-api-level-1)
+4. [Advanced API (Level 2)](#4-advanced-api-level-2)
+5. [Platform setup](#5-platform-setup)
+6. [Internals](#6-internals-for-contributors)
+7. [Example app](#example-app)
+8. [Migration guides](#migration-guides)
+
+---
+
+## 1. Quick start
+
+### Minimal chat (end-to-end)
+
+One complete flow — host, client, messaging both ways:
 
 ```dart
 import 'package:ble_peer_session/ble_peer_session.dart';
 
+final peer = Peer.create(appName: 'MyGame');
+
+// --- Host (device A) ---
+final host = await peer.host(
+  localUser: PeerUser(id: 'alice', displayName: 'Alice'),
+);
+
+host.messagesStream.listen((message) {
+  if (message.type == PeerMessageTypes.sessionInvite) host.accept();
+});
+
+host.textMessages.listen(print);
+await host.sendText('Room is ready');
+
+// --- Client (device B) ---
+final client = await peer.client(
+  localUser: PeerUser(id: 'bob', displayName: 'Bob'),
+);
+
+client.nearbyHostsStream.listen((hosts) {
+  if (hosts.isEmpty) return;
+  client.invite(hosts.first);
+});
+
+client.textMessages.listen(print);
+await client.sendText('Hello!');
+```
+
+### Split into pieces
+
+**Host — wait for a friend**
+
+```dart
 final peer = Peer.create(appName: 'MyGame');
 
 final host = await peer.host(
@@ -20,16 +95,13 @@ final host = await peer.host(
 );
 
 host.messagesStream.listen((message) {
-  if (message.type == PeerMessageTypes.sessionInvite) {
-    host.accept(); // friend wants to join
-  }
+  if (message.type == PeerMessageTypes.sessionInvite) host.accept();
 });
 
-await host.sendText('Room is ready');
 host.textMessages.listen(print);
 ```
 
-### Client — find host and say hello
+**Client — find host and say hello**
 
 ```dart
 final peer = Peer.create(appName: 'MyGame');
@@ -40,92 +112,13 @@ final client = await peer.client(
 
 client.nearbyHostsStream.listen((hosts) {
   if (hosts.isEmpty) return;
-  client.invite(hosts.first); // sends invite, not "BLE connect"
+  client.invite(hosts.first);
 });
 
 client.textMessages.listen(print);
-await client.sendText('Hello!');
 ```
 
-That is the whole mental model:
-
-| Step | Host | Client |
-|------|------|--------|
-| Start | `peer.host(localUser: …)` | `peer.client(localUser: …)` |
-| Find peer | waits | `nearbyHostsStream` |
-| Connect | `accept()` on invite | `invite(host)` |
-| Chat | `sendText()` / `textMessages` | same |
-
-No UUIDs. No `PeerEndpoint`. No `type`/`payload` unless you need custom game data.
-
----
-
-## Table of contents
-
-1. [Two API levels](#two-api-levels)
-2. [Mental model](#mental-model)
-3. [Setup](#setup)
-4. [Connection flow](#connection-flow)
-5. [Custom messages (advanced)](#custom-messages-advanced)
-6. [Bluetooth adapter](#bluetooth-adapter)
-7. [Errors](#errors)
-8. [Android setup](#android-setup)
-9. [Message framing](#message-framing)
-10. [Example app](#example-app)
-11. [Migration guides](#migration-guides)
-
----
-
-## Two API levels
-
-### Level 1 — beginner (recommended)
-
-| Concept | API |
-|---------|-----|
-| Entry | `Peer.create(appName: 'MyGame')` — UUIDs generated automatically |
-| Who am I | `PeerUser(id: '…', displayName: '…')` |
-| Host | `await peer.host(localUser: user)` |
-| Client | `await peer.client(localUser: user)` |
-| Nearby friend | `PeerNearby` in `nearbyHostsStream` |
-| Connect | `client.invite(host)` |
-| Text chat | `sendText()` / `textMessages` |
-| Game JSON | `sendJson('game.move', {'row': 1})` / `jsonMessages` |
-
-### Level 2 — advanced (full control)
-
-| Concept | API |
-|---------|-----|
-| Custom UUIDs | `Peer.create(config: BlePeerConfig(...), logger: logger)` |
-| Wire endpoint | `startWithEndpoint` / `startDiscoveryWithEndpoint` |
-| Raw device | `connect(device)` |
-| Any payload | `PeerMessage.app(type: '…', payload: …)` |
-| Session types | `PeerMessageTypes.sessionInvite`, etc. |
-
----
-
-## Mental model
-
-Think in **people and invitations**, not BLE:
-
-```mermaid
-flowchart LR
-  Host[Host waits]
-  Client[Client scans]
-  Invite[Client invites]
-  Accept[Host accepts]
-  Chat[sendText / sendJson]
-
-  Host --> Invite
-  Client --> Invite
-  Invite --> Accept
-  Accept --> Chat
-```
-
-Under the hood: advertising, GATT, JSON frames — you never need to touch that for basic use.
-
----
-
-## Setup
+### Setup
 
 ```dart
 final peer = Peer.create(appName: 'MyGame');
@@ -139,22 +132,13 @@ if (peer.adapterStatus == PeerAdapterStatus.disabled) {
 await peer.permissions.checkPermissions();
 ```
 
-Custom UUIDs (only if you know why):
-
-```dart
-final peer = Peer.create(
-  config: BlePeerConfig(
-    appName: 'MyGame',
-    serviceUuid: '0000180d-0000-1000-8000-00805f9b34fb',
-    characteristicUuid: '00002a37-0000-1000-8000-00805f9b34fb',
-  ),
-  logger: myLogger,
-);
-```
-
 ---
 
-## Connection flow
+## 2. Core model
+
+Think in **people and invitations**, not BLE. The host advertises and waits; the client scans for nearby hosts and sends an invite. When the host accepts, both sides are connected and can exchange messages. Under the hood: advertising, GATT, JSON frames — you never need to touch that for basic use.
+
+### Connection flow (deep dive)
 
 ```mermaid
 sequenceDiagram
@@ -179,10 +163,44 @@ Phases (`connectionStream` → `PeerConnectionPhase`):
 
 ---
 
-## Custom messages (advanced)
+## 3. API (Level 1)
+
+Recommended for most apps:
+
+- `Peer.create(appName: 'MyGame')` — entry point; UUIDs generated automatically
+- `peer.host(localUser: …)` / `peer.client(localUser: …)` — start a session
+- `sendText()` / `textMessages` — plain text chat
+- `sendJson(type, map)` / `jsonMessages` — typed game or app payloads
+
+Identity: `PeerUser(id: '…', displayName: '…')`. Nearby host: `PeerNearby` in `nearbyHostsStream`.
+
+---
+
+## 4. Advanced API (Level 2)
+
+Only if you need control over UUIDs or raw BLE transport.
 
 ```dart
-// Typed app message
+final peer = Peer.create(
+  config: BlePeerConfig(
+    appName: 'MyGame',
+    serviceUuid: '0000180d-0000-1000-8000-00805f9b34fb',
+    characteristicUuid: '00002a37-0000-1000-8000-00805f9b34fb',
+  ),
+  logger: myLogger,
+);
+```
+
+| Escape hatch | API |
+|--------------|-----|
+| Wire endpoint | `startWithEndpoint` / `startDiscoveryWithEndpoint` |
+| Raw device | `connect(device)` |
+| Any payload | `PeerMessage.app(type: '…', payload: …)` |
+| Session types | `PeerMessageTypes.sessionInvite`, etc. |
+
+Custom app messages:
+
+```dart
 await host.sendJson('game.move', {'row': 1, 'column': 2});
 
 // Or full control
@@ -199,7 +217,21 @@ Reserved session types (`PeerMessageTypes.*`) are handled automatically during h
 
 ---
 
-## Bluetooth adapter
+## 5. Platform setup
+
+### Android
+
+**Required permissions** — add to `AndroidManifest.xml`:
+
+```xml
+<uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
+<uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+<uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
+```
+
+**Common issue:** if discovery doesn't work, check location and Bluetooth permissions on Android 12+ (`await peer.permissions.checkPermissions()`).
+
+### Bluetooth adapter
 
 The package **does not** turn Bluetooth on. Observe status and guide the user:
 
@@ -218,25 +250,11 @@ peer.adapterStatusStream.listen((status) {
 
 ---
 
-## Errors
+## 6. Internals (for contributors)
 
-All failures throw `PeerException` with `PeerErrorCode`. See [doc/ERROR_CODES.md](doc/ERROR_CODES.md).
+You don't need the sections below unless you implement a custom client or debug BLE issues.
 
----
-
-## Android setup
-
-Add to `AndroidManifest.xml`:
-
-```xml
-<uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
-<uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
-<uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
-```
-
----
-
-## Message framing
+### Message framing
 
 One GATT write/notify carries one **frame**. Logical JSON messages larger than the effective MTU are split automatically on the link layer — you do not need to chunk in app code.
 
@@ -254,6 +272,10 @@ Wire layout (big-endian):
 ```
 
 Legacy peers that send raw JSON without the framing header (`version != 0x01`) are still accepted on receive.
+
+### Errors
+
+All failures throw `PeerException` with `PeerErrorCode`. See [doc/ERROR_CODES.md](doc/ERROR_CODES.md).
 
 ---
 
@@ -280,6 +302,7 @@ Same `appName` (`MinimalChat` in the example) is required so both sides share se
 
 ## Migration guides
 
+- [Documentation index](doc/README.md)
 - [0.1.x → 0.2.0](doc/MIGRATION.md)
 - [0.2.x → 0.3.0](doc/MIGRATION_0.3.md)
 

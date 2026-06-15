@@ -2,6 +2,10 @@
 
 All package failures surface as `PeerException` with a `PeerErrorCode`.
 
+See also: [main README](../README.md) · [doc index](README.md)
+
+---
+
 ## Adapter and permissions
 
 | Code | Typical cause | Suggested handling |
@@ -23,8 +27,8 @@ All package failures surface as `PeerException` with a `PeerErrorCode`.
 | `deviceNotFound` | Connect target not in scan cache | Refresh discovery |
 | `connectionFailed` | GATT connect or setup failed | Retry connect |
 | `connectionTimeout` | Link setup timed out | Retry |
-| `serviceNotFound` | Remote device lacks configured service UUID | Wrong app/version on remote device |
-| `characteristicNotFound` | GATT characteristic missing | Config mismatch |
+| `serviceNotFound` | Remote device lacks configured service UUID | Wrong `appName` or version on remote device |
+| `characteristicNotFound` | GATT characteristic missing | Config mismatch (custom UUIDs) |
 | `sessionNotConnected` | Send while link is down | Wait for `connected` phase |
 
 ## Session handshake
@@ -38,9 +42,9 @@ All package failures surface as `PeerException` with a `PeerErrorCode`.
 
 | Code | Typical cause | Suggested handling |
 |------|---------------|-------------------|
-| `payloadTooLarge` | JSON exceeds MTU | Shrink payload or wait for framing (backlog) |
+| `payloadTooLarge` | Logical message exceeds 256 KiB limit | Shrink payload |
 | `messageEncodeFailed` | Invalid message shape | Fix app message |
-| `messageDecodeFailed` | Corrupt or unknown wire JSON | Log and ignore |
+| `messageDecodeFailed` | Corrupt or incomplete frame on wire | Log and ignore; see [message framing](../README.md#message-framing) |
 | `messageSendFailed` | GATT write failed | Retry or disconnect |
 
 ## Lifecycle
@@ -51,12 +55,21 @@ All package failures surface as `PeerException` with a `PeerErrorCode`.
 | `operationCancelled` | Operation aborted | No-op or retry |
 | `unexpected` | Unmapped platform error | Log `cause`; generic error UI |
 
+---
+
 ## Example
 
 ```dart
 try {
-  await client.connect(device);
+  await client.invite(host);
 } on PeerException catch (e) {
-  debugPrint('${e.code}: ${e.cause}');
+  switch (e.code) {
+    case PeerErrorCode.permissionsDenied:
+      await peer.permissions.checkPermissions();
+    case PeerErrorCode.sessionNotConnected:
+      // wait for connected phase
+    default:
+      debugPrint('${e.code}: ${e.cause}');
+  }
 }
 ```

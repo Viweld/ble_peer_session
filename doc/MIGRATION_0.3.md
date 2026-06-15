@@ -1,19 +1,26 @@
 # Migration guide: 0.2.x → 0.3.0
 
-Version 0.3.0 adds a beginner-friendly API layer. **All 0.2 APIs still work.**
+Version 0.3.0 adds a beginner-friendly **Level 1 API**. All 0.2 APIs still work (Level 2).
 
-## Summary
+See also: [main README](../README.md) · [0.1 → 0.2 guide](MIGRATION.md) · [doc index](README.md)
 
-| 0.2.x | 0.3.0 (recommended) | 0.2 still works |
-|-------|---------------------|-----------------|
-| `Peer.create(config: …, logger: …)` | `Peer.create(appName: 'MyGame')` | yes |
-| `localPeer: PeerEndpoint` | `localUser: PeerUser` | `startWithEndpoint` / `startDiscoveryWithEndpoint` |
-| `createHost()` + `start()` | `peer.host(localUser: …)` | yes |
-| `createClient()` + `startDiscovery()` | `peer.client(localUser: …)` | yes |
-| `connect(device)` | `invite(PeerNearby)` | `connect(device)` |
-| `PeerMessage(type: '…', …)` | `PeerMessage.app` / `sendText()` | yes |
+---
 
-## Simpler entry
+## TL;DR
+
+| 0.2.x | 0.3.0 (Level 1) |
+|-------|-----------------|
+| `Peer.create(config: …, logger: …)` | `Peer.create(appName: 'MyGame')` |
+| `localPeer: PeerEndpoint` | `localUser: PeerUser` |
+| `createHost()` + `start()` | `peer.host(localUser: …)` |
+| `createClient()` + `startDiscovery()` | `peer.client(localUser: …)` |
+| `connect(device)` | `invite(PeerNearby)` |
+
+Keep the 0.2 API when you need custom UUIDs, raw `Device` / `PeerEndpoint`, or a custom `Logger`. See [Advanced API](../README.md#4-advanced-api-level-2).
+
+---
+
+## Entry point
 
 **Before (0.2):**
 
@@ -32,18 +39,21 @@ final peer = Peer.create(
 
 ```dart
 final peer = Peer.create(appName: 'MyGame');
-// UUIDs are derived from appName — same on every device with the same app
+// UUIDs derived from appName — same on every device with the same app
 ```
 
-## PeerUser instead of PeerEndpoint
+---
+
+## Host / client
 
 **Before:**
 
 ```dart
-await client.startDiscovery(
+final host = await peer.createHost();
+await host.start(
   localPeer: PeerEndpoint(
-    identity: PeerIdentity(id: 'u1', displayName: 'Bob'),
-    device: Device(id: 'd1', name: 'BobPhone', isOurApp: true),
+    identity: PeerIdentity(id: 'u1', displayName: 'Alice'),
+    device: Device(id: 'd1', name: 'AlicePhone', isOurApp: true),
   ),
 );
 ```
@@ -51,27 +61,40 @@ await client.startDiscovery(
 **After:**
 
 ```dart
-await client.startDiscovery(
-  localUser: PeerUser(id: 'u1', displayName: 'Bob'),
+final host = await peer.host(
+  localUser: PeerUser(id: 'u1', displayName: 'Alice'),
 );
 ```
 
-## Shortcuts
+Same pattern for client: `peer.client(localUser: …)` instead of `createClient()` + `startDiscovery()`.
 
-```dart
-final host = await peer.host(localUser: user);
-final client = await peer.client(localUser: user);
-```
+---
 
 ## Invite instead of connect
 
+**Before:**
+
 ```dart
-client.nearbyHostsStream.listen((hosts) {
-  client.invite(hosts.first);
+client.devicesStream.listen((devices) {
+  client.connect(devices.first);
 });
 ```
 
-## High-level messaging
+**After:**
+
+```dart
+client.nearbyHostsStream.listen((hosts) {
+  if (hosts.isNotEmpty) client.invite(hosts.first);
+});
+```
+
+`invite()` sends a session invitation — not a raw BLE connect. The host calls `accept()` to complete the handshake.
+
+---
+
+## Messaging
+
+Level 1 shortcuts (optional — `send()` with `PeerMessage.app` still works):
 
 ```dart
 await host.sendText('Hello');
@@ -81,8 +104,12 @@ await host.sendJson('game.move', {'row': 1});
 host.jsonMessages.listen((payload) { /* ... */ });
 ```
 
+---
+
 ## When to keep the 0.2 API
 
 - Custom BLE service UUIDs shared with another app or platform
 - Full control over `Device` / `PeerEndpoint` wire format
 - Custom `Logger` (default is silent in 0.3 when omitted)
+
+Use `startWithEndpoint`, `startDiscoveryWithEndpoint`, and `connect(device)` — documented under [Advanced API](../README.md#4-advanced-api-level-2).
