@@ -31,10 +31,7 @@ final class SessionLivenessMonitor {
       unawaited(_onSendPing());
     });
 
-    _watchdogTimer = Timer.periodic(
-      const Duration(seconds: 1),
-      (_) => _checkTimeout(),
-    );
+    _watchdogTimer = Timer.periodic(const Duration(seconds: 1), (_) => _checkTimeout());
   }
 
   void stop() {

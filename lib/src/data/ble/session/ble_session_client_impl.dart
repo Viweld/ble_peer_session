@@ -10,38 +10,29 @@ import '../../../domain/transport/transport_session_client.dart';
 import '../link/ble_link_client_impl.dart';
 import 'ble_session_base.dart';
 
-final class BleSessionClientImpl extends BleSessionBase
-    implements TransportSessionClient {
-  BleSessionClientImpl({
-    required BleLinkClientImpl link,
-    required Messenger messenger,
-  }) : _link = link,
-       _messenger = messenger {
+final class BleSessionClientImpl extends BleSessionBase implements TransportSessionClient {
+  BleSessionClientImpl({required BleLinkClientImpl link, required Messenger messenger})
+    : _link = link,
+      _messenger = messenger {
     bindLinkLostStream(_link.linkLostStream);
-    _unhandledMessagesSubscription = _messenger.messagesStream.listen(
-      _messagesHandler,
-    );
+    _unhandledMessagesSubscription = _messenger.messagesStream.listen(_messagesHandler);
     _handledMessagesController = StreamController<TransportMessage>.broadcast();
   }
 
   final BleLinkClientImpl _link;
   final Messenger _messenger;
 
-  late final StreamSubscription<TransportMessage>
-  _unhandledMessagesSubscription;
+  late final StreamSubscription<TransportMessage> _unhandledMessagesSubscription;
   late final StreamController<TransportMessage> _handledMessagesController;
 
   @override
-  Stream<List<Device>> get discoveredDevicesStream =>
-      _link.discoveredDevicesStream;
+  Stream<List<Device>> get discoveredDevicesStream => _link.discoveredDevicesStream;
 
   @override
-  Stream<TransportMessage> get messagesStream =>
-      _handledMessagesController.stream;
+  Stream<TransportMessage> get messagesStream => _handledMessagesController.stream;
 
   @override
-  Future<void> sendMessage(TransportMessage message) =>
-      _messenger.sendMessage(message);
+  Future<void> sendMessage(TransportMessage message) => _messenger.sendMessage(message);
 
   @override
   Future<void> startDiscovery({required PeerEndpoint localPeer}) async {
@@ -132,9 +123,7 @@ final class BleSessionClientImpl extends BleSessionBase
     switch (event) {
       case HeartbeatPingMessage():
         recordSessionActivity();
-        await _messenger.sendMessage(
-          HeartbeatPongMessage(peerEndpoint: localPeer),
-        );
+        await _messenger.sendMessage(HeartbeatPongMessage(peerEndpoint: localPeer));
         return true;
       case HeartbeatPongMessage():
         recordSessionActivity();

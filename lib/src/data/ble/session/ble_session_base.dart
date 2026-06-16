@@ -12,16 +12,14 @@ import '../session/session_liveness_monitor.dart';
 /// Shared session FSM logic for client and server implementations.
 abstract base class BleSessionBase implements TransportSession {
   BleSessionBase() {
-    _disconnectEventController =
-        StreamController<TransportSessionDisconnectEvent>.broadcast();
+    _disconnectEventController = StreamController<TransportSessionDisconnectEvent>.broadcast();
   }
 
   @override
   TransportSessionState? get currentConnectionState => _currentConnectionState;
 
   @override
-  Stream<TransportSessionState> get connectionStateStream =>
-      _connectionStateController.stream;
+  Stream<TransportSessionState> get connectionStateStream => _connectionStateController.stream;
 
   @override
   Stream<TransportSessionDisconnectEvent> get disconnectEventStream =>
@@ -37,10 +35,8 @@ abstract base class BleSessionBase implements TransportSession {
   }
 
   TransportSessionState? _currentConnectionState;
-  final _connectionStateController =
-      StreamController<TransportSessionState>.broadcast();
-  late final StreamController<TransportSessionDisconnectEvent>
-  _disconnectEventController;
+  final _connectionStateController = StreamController<TransportSessionState>.broadcast();
+  late final StreamController<TransportSessionDisconnectEvent> _disconnectEventController;
 
   SessionLivenessMonitor? _livenessMonitor;
   StreamSubscription<void>? _linkLostSubscription;
@@ -49,8 +45,7 @@ abstract base class BleSessionBase implements TransportSession {
   @protected
   PeerEndpoint get localPeer {
     final PeerEndpoint? localPeer = _currentConnectionState?.localPeer;
-    return localPeer ??
-        (throw UnsupportedError('localPeer is not initialized'));
+    return localPeer ?? (throw UnsupportedError('localPeer is not initialized'));
   }
 
   @protected
@@ -58,10 +53,7 @@ abstract base class BleSessionBase implements TransportSession {
     unawaited(_linkLostSubscription?.cancel());
     _linkLostSubscription = linkLostStream.listen((_) {
       unawaited(
-        handleConnectedDisconnect(
-          PeerDisconnectReason.linkLost,
-          sendProtocolMessage: false,
-        ),
+        handleConnectedDisconnect(PeerDisconnectReason.linkLost, sendProtocolMessage: false),
       );
     });
   }
@@ -76,15 +68,10 @@ abstract base class BleSessionBase implements TransportSession {
   void onConnectionInvitationReceived({required PeerEndpoint remotePeer}) {
     final TransportSessionState state = _currentConnectionState!;
     if (state is! TransportSessionDisconnected) {
-      throw UnsupportedError(
-        'Cannot transition to AwaitingUserDecision from $state',
-      );
+      throw UnsupportedError('Cannot transition to AwaitingUserDecision from $state');
     }
     _setConnectionState(
-      TransportSessionAwaitingUserDecision(
-        localPeer: state.localPeer,
-        remotePeer: remotePeer,
-      ),
+      TransportSessionAwaitingUserDecision(localPeer: state.localPeer, remotePeer: remotePeer),
     );
   }
 
@@ -92,13 +79,9 @@ abstract base class BleSessionBase implements TransportSession {
   void onConnectionInvitationSent() {
     final TransportSessionState state = _currentConnectionState!;
     if (state is! TransportSessionDisconnected) {
-      throw UnsupportedError(
-        'Cannot transition to AwaitingRemoteDecision from $state',
-      );
+      throw UnsupportedError('Cannot transition to AwaitingRemoteDecision from $state');
     }
-    _setConnectionState(
-      TransportSessionAwaitingRemoteDecision(localPeer: state.localPeer),
-    );
+    _setConnectionState(TransportSessionAwaitingRemoteDecision(localPeer: state.localPeer));
   }
 
   @protected
@@ -107,9 +90,7 @@ abstract base class BleSessionBase implements TransportSession {
     if (state is! TransportSessionAwaitingRemoteDecision) {
       throw UnsupportedError('Cannot transition to Disconnected from $state');
     }
-    _setConnectionState(
-      TransportSessionDisconnected(localPeer: state.localPeer),
-    );
+    _setConnectionState(TransportSessionDisconnected(localPeer: state.localPeer));
   }
 
   @protected
@@ -118,9 +99,7 @@ abstract base class BleSessionBase implements TransportSession {
     if (state is! TransportSessionAwaitingUserDecision) {
       throw UnsupportedError('Cannot transition to Disconnected from $state');
     }
-    _setConnectionState(
-      TransportSessionDisconnected(localPeer: state.localPeer),
-    );
+    _setConnectionState(TransportSessionDisconnected(localPeer: state.localPeer));
   }
 
   @protected
@@ -151,9 +130,7 @@ abstract base class BleSessionBase implements TransportSession {
     _stopLivenessMonitor();
 
     final PeerEndpoint remotePeer = state.remotePeer;
-    _setConnectionState(
-      TransportSessionDisconnected(localPeer: state.localPeer),
-    );
+    _setConnectionState(TransportSessionDisconnected(localPeer: state.localPeer));
 
     if (_disconnectEventController.isClosed) return;
     _disconnectEventController.add(
@@ -195,14 +172,9 @@ abstract base class BleSessionBase implements TransportSession {
   @protected
   Future<void> sendHeartbeatPing();
 
-  void _enterConnected({
-    required PeerEndpoint localPeer,
-    required PeerEndpoint remotePeer,
-  }) {
+  void _enterConnected({required PeerEndpoint localPeer, required PeerEndpoint remotePeer}) {
     _disconnectHandled = false;
-    _setConnectionState(
-      TransportSessionConnected(localPeer: localPeer, remotePeer: remotePeer),
-    );
+    _setConnectionState(TransportSessionConnected(localPeer: localPeer, remotePeer: remotePeer));
     _startLivenessMonitor();
   }
 
@@ -212,10 +184,7 @@ abstract base class BleSessionBase implements TransportSession {
       onSendPing: sendHeartbeatPing,
       onTimeout: () {
         unawaited(
-          handleConnectedDisconnect(
-            PeerDisconnectReason.timeout,
-            sendProtocolMessage: false,
-          ),
+          handleConnectedDisconnect(PeerDisconnectReason.timeout, sendProtocolMessage: false),
         );
       },
     )..start();

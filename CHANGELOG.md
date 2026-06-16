@@ -1,3 +1,9 @@
+## 0.4.2
+
+- **Android:** lazy-init `PeripheralManager` on the server link so client-only sessions do not open a GATT server at peer creation.
+- **Android:** tear down GATT services and close the GATT server on server link dispose to avoid dual central/peripheral conflicts during host/client role switches (Samsung).
+- **Transport:** increase post-MTU settle delay on the central link from 300ms to 500ms.
+
 ## 0.4.1
 
 - **Pub score:** add standard `example/` layout for pub.dev (160/160 pub points).

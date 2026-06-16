@@ -9,34 +9,26 @@ import '../../../domain/transport/transport_session_server.dart';
 import '../link/ble_link_server_impl.dart';
 import 'ble_session_base.dart';
 
-final class BleSessionServerImpl extends BleSessionBase
-    implements TransportSessionServer {
-  BleSessionServerImpl({
-    required BleLinkServerImpl link,
-    required Messenger messenger,
-  }) : _link = link,
-       _messenger = messenger {
+final class BleSessionServerImpl extends BleSessionBase implements TransportSessionServer {
+  BleSessionServerImpl({required BleLinkServerImpl link, required Messenger messenger})
+    : _link = link,
+      _messenger = messenger {
     bindLinkLostStream(_link.linkLostStream);
-    _unhandledMessagesSubscription = _messenger.messagesStream.listen(
-      _messagesHandler,
-    );
+    _unhandledMessagesSubscription = _messenger.messagesStream.listen(_messagesHandler);
     _handledMessagesController = StreamController<TransportMessage>.broadcast();
   }
 
   final BleLinkServerImpl _link;
   final Messenger _messenger;
 
-  late final StreamSubscription<TransportMessage>
-  _unhandledMessagesSubscription;
+  late final StreamSubscription<TransportMessage> _unhandledMessagesSubscription;
   late final StreamController<TransportMessage> _handledMessagesController;
 
   @override
-  Stream<TransportMessage> get messagesStream =>
-      _handledMessagesController.stream;
+  Stream<TransportMessage> get messagesStream => _handledMessagesController.stream;
 
   @override
-  Future<void> sendMessage(TransportMessage message) =>
-      _messenger.sendMessage(message);
+  Future<void> sendMessage(TransportMessage message) => _messenger.sendMessage(message);
 
   @override
   Future<void> startAdvertising({required PeerEndpoint localPeer}) async {
@@ -126,9 +118,7 @@ final class BleSessionServerImpl extends BleSessionBase
     switch (event) {
       case HeartbeatPingMessage():
         recordSessionActivity();
-        await _messenger.sendMessage(
-          HeartbeatPongMessage(peerEndpoint: localPeer),
-        );
+        await _messenger.sendMessage(HeartbeatPongMessage(peerEndpoint: localPeer));
         return true;
       case HeartbeatPongMessage():
         recordSessionActivity();
