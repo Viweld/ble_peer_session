@@ -39,6 +39,7 @@ final class BleLinkServerImpl extends BleLinkBase implements TransportLinkServer
       await BleLinkReadiness.ensurePermissions();
       await BleLinkReadiness.ensureManagerPoweredOn(_peripheral);
       await stopAdvertising();
+      await _reopenGattServer();
       await _peripheral.removeAllServices();
 
       _writeCharacteristic = GATTCharacteristic.mutable(
@@ -162,6 +163,14 @@ final class BleLinkServerImpl extends BleLinkBase implements TransportLinkServer
     }
     await closeAndroidGattServer();
     _peripheralManager = null;
+  }
+
+  /// Recreates the Android GATT server so [addService] runs against a live
+  /// server. Closing first keeps server registrations balanced regardless of
+  /// whether the previous host session was torn down or still open.
+  Future<void> _reopenGattServer() async {
+    await closeAndroidGattServer();
+    await openAndroidGattServer();
   }
 
   Future<void> _peripheralEventHandler(GATTCharacteristicWriteRequestedEventArgs event) async {

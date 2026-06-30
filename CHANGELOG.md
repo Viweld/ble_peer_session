@@ -1,3 +1,7 @@
+## 0.4.3
+
+- **Android:** reopen a fresh GATT server in `BleLinkServerImpl.startAdvertisingAs` before adding the service. Fixes `IllegalStateException` (`addService`) when a host session is started again after a previous host advertising was stopped and torn down (the singleton `PeripheralManager` only reopens GATT on adapter power-on transitions).
+
 ## 0.4.2
 
 - **Android:** lazy-init `PeripheralManager` on the server link so client-only sessions do not open a GATT server at peer creation.

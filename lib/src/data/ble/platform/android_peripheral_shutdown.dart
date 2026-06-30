@@ -16,3 +16,20 @@ Future<void> closeAndroidGattServer() async {
     // Best-effort cleanup during role switch or peer dispose.
   }
 }
+
+/// Opens a fresh Android GATT server on the [PeripheralManager] singleton.
+///
+/// [PeripheralManager] only opens its GATT server on adapter power-on
+/// transitions. Once the server is closed during host teardown the adapter
+/// stays powered on, so a subsequent `addService` call hits the closed server
+/// and throws `IllegalStateException`. Reopening here restores host advertising
+/// after a previous host session was torn down.
+Future<void> openAndroidGattServer() async {
+  if (kIsWeb || !Platform.isAndroid) return;
+
+  try {
+    await PeripheralManagerHostApi().openGATTServer();
+  } on Object {
+    // Best-effort; addService surfaces failures if the server stays unavailable.
+  }
+}
