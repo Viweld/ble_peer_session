@@ -9,9 +9,7 @@ void main() {
 
   group('BleFrameCodec.fragment', () {
     test('single-chunk message roundtrip', () {
-      final Uint8List message = Uint8List.fromList(
-        List<int>.generate(5, (int i) => i),
-      );
+      final Uint8List message = Uint8List.fromList(List<int>.generate(5, (int i) => i));
       final List<Uint8List> frames = codec.fragment(message, messageId: 1);
 
       expect(frames, hasLength(1));
@@ -26,9 +24,7 @@ void main() {
     });
 
     test('multi-chunk message roundtrip', () {
-      final Uint8List message = Uint8List.fromList(
-        List<int>.generate(25, (int i) => i),
-      );
+      final Uint8List message = Uint8List.fromList(List<int>.generate(25, (int i) => i));
       final List<Uint8List> frames = codec.fragment(message, messageId: 42);
 
       expect(frames, hasLength(3));
@@ -41,10 +37,7 @@ void main() {
 
     test('rejects oversized logical message', () {
       final Uint8List message = Uint8List(101);
-      expect(
-        () => codec.fragment(message, messageId: 1),
-        throwsA(isA<PeerException>()),
-      );
+      expect(() => codec.fragment(message, messageId: 1), throwsA(isA<PeerException>()));
     });
   });
 
@@ -74,9 +67,7 @@ void main() {
     });
 
     test('reset clears partial state', () {
-      final Uint8List message = Uint8List.fromList(
-        List<int>.generate(25, (int i) => i),
-      );
+      final Uint8List message = Uint8List.fromList(List<int>.generate(25, (int i) => i));
       final List<Uint8List> frames = codec.fragment(message, messageId: 7);
       final BleFrameAssembler assembler = BleFrameAssembler(codec: codec);
 

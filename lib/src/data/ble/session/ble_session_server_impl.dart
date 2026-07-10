@@ -8,6 +8,7 @@ import '../../../domain/transport/models/transport_session_state.dart';
 import '../../../domain/transport/transport_session_server.dart';
 import '../link/ble_link_server_impl.dart';
 import 'ble_session_base.dart';
+import 'session_heartbeat_send.dart';
 
 final class BleSessionServerImpl extends BleSessionBase implements TransportSessionServer {
   BleSessionServerImpl({required BleLinkServerImpl link, required Messenger messenger})
@@ -84,7 +85,9 @@ final class BleSessionServerImpl extends BleSessionBase implements TransportSess
   @override
   Future<void> sendHeartbeatPing() async {
     if (currentConnectionState is! TransportSessionConnected) return;
-    await _messenger.sendMessage(HeartbeatPingMessage(peerEndpoint: localPeer));
+    await sendSessionHeartbeat(
+      () => _messenger.sendMessage(HeartbeatPingMessage(peerEndpoint: localPeer)),
+    );
   }
 
   @override
@@ -118,7 +121,9 @@ final class BleSessionServerImpl extends BleSessionBase implements TransportSess
     switch (event) {
       case HeartbeatPingMessage():
         recordSessionActivity();
-        await _messenger.sendMessage(HeartbeatPongMessage(peerEndpoint: localPeer));
+        await sendSessionHeartbeat(
+          () => _messenger.sendMessage(HeartbeatPongMessage(peerEndpoint: localPeer)),
+        );
         return true;
       case HeartbeatPongMessage():
         recordSessionActivity();

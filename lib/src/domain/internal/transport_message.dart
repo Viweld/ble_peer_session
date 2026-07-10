@@ -43,11 +43,7 @@ final class HeartbeatPongMessage extends TransportMessage {
 /// Application payload on the wire before public [PeerMessage] mapping.
 @immutable
 final class AppTransportMessage extends TransportMessage {
-  const AppTransportMessage({
-    required super.peerEndpoint,
-    required this.type,
-    this.payload,
-  });
+  const AppTransportMessage({required super.peerEndpoint, required this.type, this.payload});
 
   final String type;
   final Map<String, dynamic>? payload;

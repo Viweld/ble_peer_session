@@ -30,9 +30,6 @@ final class BlePeerConfig {
 
   /// Stable UUIDs derived from [appName]. Same app name → same UUIDs on every device.
   factory BlePeerConfig.forApp(String appName, {String deviceNamePrefix = ''}) {
-    return BlePeerUuidGenerator.configFor(
-      appName,
-      deviceNamePrefix: deviceNamePrefix,
-    );
+    return BlePeerUuidGenerator.configFor(appName, deviceNamePrefix: deviceNamePrefix);
   }
 }

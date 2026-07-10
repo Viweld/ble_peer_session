@@ -4,8 +4,7 @@ import '../../domain/exceptions/peer_exception.dart';
 import '../../domain/services/bluetooth_permissions_service.dart';
 import 'bluetooth_permissions_utils.dart';
 
-final class BluetoothPermissionsServiceImpl
-    implements BluetoothPermissionsService {
+final class BluetoothPermissionsServiceImpl implements BluetoothPermissionsService {
   @override
   Future<bool> checkPermissions() async {
     var allGranted = await BluetoothPermissionsUtils.checkPermissions();
@@ -29,6 +28,5 @@ final class BluetoothPermissionsServiceImpl
   }
 
   @override
-  Future<bool> openAppSettings() =>
-      BluetoothPermissionsUtils.openAppSettingsSafe();
+  Future<bool> openAppSettings() => BluetoothPermissionsUtils.openAppSettingsSafe();
 }

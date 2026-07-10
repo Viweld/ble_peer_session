@@ -24,9 +24,7 @@ extension PeerSessionMessagingX on PeerSessionMessaging {
             !PeerMessageTypes.isSessionType(message.type) &&
             message.type != PeerMessageTypes.appText,
       )
-      .map(
-        (PeerMessage message) => message.payload ?? const <String, dynamic>{},
-      );
+      .map((PeerMessage message) => message.payload ?? const <String, dynamic>{});
 
   /// Sends a plain-text message using the stored local endpoint.
   Future<void> sendText(String text) {
@@ -43,8 +41,6 @@ extension PeerSessionMessagingX on PeerSessionMessaging {
     if (endpoint == null) {
       throwPeer(PeerErrorCode.sessionNotConnected);
     }
-    return send(
-      PeerMessage.app(sender: endpoint, type: type, payload: payload),
-    );
+    return send(PeerMessage.app(sender: endpoint, type: type, payload: payload));
   }
 }

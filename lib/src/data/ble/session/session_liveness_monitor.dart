@@ -28,7 +28,7 @@ final class SessionLivenessMonitor {
     recordActivity();
 
     _heartbeatTimer = Timer.periodic(heartbeatInterval, (_) {
-      unawaited(_onSendPing());
+      unawaited(_sendPingSafely());
     });
 
     _watchdogTimer = Timer.periodic(const Duration(seconds: 1), (_) => _checkTimeout());
@@ -53,5 +53,13 @@ final class SessionLivenessMonitor {
     _timeoutReported = true;
     stop();
     _onTimeout();
+  }
+
+  Future<void> _sendPingSafely() async {
+    try {
+      await _onSendPing();
+    } on Object {
+      // Transient transport errors are handled by the link layer and watchdog.
+    }
   }
 }

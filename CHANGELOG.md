@@ -1,3 +1,10 @@
+## 0.4.4
+
+- **Transport:** retry transient GATT central writes up to 3 times before failing (`BleGattWritePolicy`).
+- **Transport:** do not reset the central link on `IllegalStateException` alone; only on GATT 133 / `GATT_ERROR`.
+- **Transport:** heartbeat ping/pong send failures no longer propagate as unhandled async errors; watchdog still detects real link loss.
+- **Transport:** `SessionLivenessMonitor` swallows transient ping send failures.
+
 ## 0.4.3
 
 - **Android:** reopen a fresh GATT server in `BleLinkServerImpl.startAdvertisingAs` before adding the service. Fixes `IllegalStateException` (`addService`) when a host session is started again after a previous host advertising was stopped and torn down (the singleton `PeripheralManager` only reopens GATT on adapter power-on transitions).

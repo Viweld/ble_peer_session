@@ -34,12 +34,21 @@ void main() {
 
   test('maps awaiting user decision to public phase', () {
     final info = PeerConnectionMapper.fromSessionState(
-      TransportSessionAwaitingUserDecision(
-        localPeer: localPeer,
-        remotePeer: remotePeer,
-      ),
+      TransportSessionAwaitingUserDecision(localPeer: localPeer, remotePeer: remotePeer),
     );
 
     expect(info?.phase, PeerConnectionPhase.awaitingUserDecision);
+  });
+
+  test('maps awaiting remote decision to public phase', () {
+    final info = PeerConnectionMapper.fromSessionState(
+      TransportSessionAwaitingRemoteDecision(localPeer: localPeer),
+    );
+
+    expect(info?.phase, PeerConnectionPhase.awaitingRemoteDecision);
+  });
+
+  test('returns null for null session state', () {
+    expect(PeerConnectionMapper.fromSessionState(null), isNull);
   });
 }

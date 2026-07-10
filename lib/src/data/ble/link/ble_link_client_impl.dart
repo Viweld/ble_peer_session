@@ -8,6 +8,7 @@ import '../../../domain/exceptions/peer_exception.dart';
 import '../../../domain/logger/logger.dart';
 import '../../../domain/models/device.dart';
 import '../../../domain/transport/transport_link_client.dart';
+import 'ble_gatt_write_policy.dart';
 import 'ble_link_base.dart';
 import 'ble_link_readiness.dart';
 
@@ -153,20 +154,40 @@ final class BleLinkClientImpl extends BleLinkBase implements TransportLinkClient
       throwPeer(PeerErrorCode.sessionNotConnected);
     }
 
-    try {
-      await _centralManager.writeCharacteristic(
-        _connectedPeripheral!,
-        _writeCharacteristic!,
-        value: frame,
-        type: GATTCharacteristicWriteType.withoutResponse,
-      );
-    } on Object catch (e, stackTrace) {
-      _log.e('Failed to send data: $e');
-      if (_isGattError133(e)) {
-        await _resetConnection();
+    Object? lastError;
+    StackTrace? lastStackTrace;
+
+    for (int attempt = 1; attempt <= BleGattWritePolicy.maxAttempts; attempt++) {
+      try {
+        await _centralManager.writeCharacteristic(
+          _connectedPeripheral!,
+          _writeCharacteristic!,
+          value: frame,
+          type: GATTCharacteristicWriteType.withoutResponse,
+        );
+        return;
+      } on Object catch (e, stackTrace) {
+        lastError = e;
+        lastStackTrace = stackTrace;
+
+        if (BleGattWritePolicy.shouldRetryWrite(attempt: attempt, error: e)) {
+          _log.w(
+            'Transient GATT write failure '
+            '(attempt $attempt/${BleGattWritePolicy.maxAttempts}): $e',
+          );
+          await Future<void>.delayed(BleGattWritePolicy.retryDelay * attempt);
+          continue;
+        }
+
+        _log.e('Failed to send data (attempt $attempt/${BleGattWritePolicy.maxAttempts}): $e');
+        if (BleGattWritePolicy.isGattLinkLostError(e)) {
+          await _resetConnection();
+        }
+        throwPeer(PeerErrorCode.messageSendFailed, cause: e, stackTrace: stackTrace);
       }
-      throwPeer(PeerErrorCode.messageSendFailed, cause: e, stackTrace: stackTrace);
     }
+
+    throwPeer(PeerErrorCode.messageSendFailed, cause: lastError, stackTrace: lastStackTrace);
   }
 
   @override
@@ -245,13 +266,6 @@ final class BleLinkClientImpl extends BleLinkBase implements TransportLinkClient
     if (!deviceName.contains(appName)) return deviceName;
     var cleanName = deviceName.replaceAll(appName, '').replaceAll('🎮', '').trim();
     return cleanName.startsWith('-') ? cleanName.substring(1).trim() : cleanName;
-  }
-
-  bool _isGattError133(Object e) {
-    final text = e.toString();
-    return text.contains('status: 133') ||
-        text.contains('GATT_ERROR') ||
-        text.contains('IllegalStateException');
   }
 
   Future<void> _resetConnection() async {

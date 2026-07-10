@@ -1,8 +1,5 @@
-import 'dart:async';
-
-import 'package:flutter_test/flutter_test.dart';
-
 import 'package:ble_peer_session/src/data/ble/session/session_liveness_monitor.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('fires timeout when no activity within heartbeat window', () async {
@@ -41,5 +38,24 @@ void main() {
 
     monitor.stop();
     expect(timeoutCount, 0);
+  });
+
+  test('onSendPing failures do not stop watchdog timeout detection', () async {
+    var timeoutCount = 0;
+
+    final SessionLivenessMonitor monitor = SessionLivenessMonitor(
+      heartbeatInterval: const Duration(milliseconds: 50),
+      heartbeatTimeout: const Duration(milliseconds: 200),
+      onSendPing: () async {
+        throw StateError('transient write failure');
+      },
+      onTimeout: () => timeoutCount++,
+    );
+
+    monitor.start();
+    await Future<void>.delayed(const Duration(milliseconds: 1200));
+    monitor.stop();
+
+    expect(timeoutCount, 1);
   });
 }
