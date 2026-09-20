@@ -13,4 +13,7 @@ abstract interface class TransportSessionClient implements TransportSession {
   Future<void> refreshDiscovery();
 
   Future<void> connectToDevice(Device device);
+
+  /// Aborts an in-flight GATT connect / unanswered invite. Idempotent.
+  Future<void> cancelPendingConnection();
 }

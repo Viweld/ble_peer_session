@@ -1,8 +1,6 @@
 import 'package:ble_peer_session/ble_peer_session.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:ble_peer_session/src/config/ble_peer_uuid_generator.dart';
-
 void main() {
   group('BlePeerUuidGenerator', () {
     test('same app name produces stable UUIDs', () {
@@ -22,10 +20,17 @@ void main() {
     });
 
     test('UUID format is valid', () {
-      final uuid = BlePeerUuidGenerator.uuidFor(appName: 'Test', kind: 'service');
+      final uuid = BlePeerUuidGenerator.uuidFor(
+        appName: 'Test',
+        kind: 'service',
+      );
       expect(
         uuid,
-        matches(RegExp(r'^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$')),
+        matches(
+          RegExp(
+            r'^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$',
+          ),
+        ),
       );
     });
   });

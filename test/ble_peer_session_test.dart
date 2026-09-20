@@ -11,5 +11,8 @@ void main() {
 
     expect(config.appName, 'Test');
     expect(config.protocolVersion, 1);
+    expect(config.androidForeground, isNull);
+    expect(config.discoveryStaleAfter, const Duration(seconds: 3));
+    expect(config.discoverySweepInterval, const Duration(milliseconds: 400));
   });
 }

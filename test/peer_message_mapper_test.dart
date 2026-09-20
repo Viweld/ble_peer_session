@@ -36,7 +36,9 @@ void main() {
 
     test('rejects heartbeat messages on public mapping', () {
       expect(
-        () => PeerMessageMapper.fromTransport(HeartbeatPingMessage(peerEndpoint: endpoint)),
+        () => PeerMessageMapper.fromTransport(
+          HeartbeatPingMessage(peerEndpoint: endpoint),
+        ),
         throwsA(isA<UnsupportedError>()),
       );
     });

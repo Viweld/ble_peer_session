@@ -4,6 +4,7 @@
 /// See [Peer] for the main entry point.
 library;
 
+export 'src/config/ble_android_foreground_config.dart';
 export 'src/config/ble_peer_config.dart';
 export 'src/config/ble_peer_uuid_generator.dart';
 export 'src/domain/exceptions/peer_exception.dart';

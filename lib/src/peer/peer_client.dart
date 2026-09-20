@@ -39,6 +39,9 @@ abstract interface class PeerClient implements PeerSessionMessaging {
   /// Connects using a raw [Device] (advanced).
   Future<void> connect(Device device);
 
+  /// Aborts an in-flight GATT connect / unanswered invite. Idempotent.
+  Future<void> cancelPendingConnection();
+
   @override
   Future<void> send(PeerMessage message);
 
@@ -46,9 +49,11 @@ abstract interface class PeerClient implements PeerSessionMessaging {
 }
 
 final class PeerClientImpl implements PeerClient {
-  PeerClientImpl({required TransportFacade facade, required TransportSessionClient client})
-    : _facade = facade,
-      _client = client;
+  PeerClientImpl({
+    required TransportFacade facade,
+    required TransportSessionClient client,
+  }) : _facade = facade,
+       _client = client;
 
   final TransportFacade _facade;
   final TransportSessionClient _client;
@@ -59,12 +64,15 @@ final class PeerClientImpl implements PeerClient {
   PeerEndpoint? get localEndpoint => _localEndpoint;
 
   @override
-  Stream<List<PeerNearby>> get nearbyHostsStream => _client.discoveredDevicesStream.map(
-    (List<Device> devices) => devices.map(PeerNearby.fromDevice).toList(growable: false),
-  );
+  Stream<List<PeerNearby>> get nearbyHostsStream =>
+      _client.discoveredDevicesStream.map(
+        (List<Device> devices) =>
+            devices.map(PeerNearby.fromDevice).toList(growable: false),
+      );
 
   @override
-  Stream<List<Device>> get discoveredDevicesStream => _client.discoveredDevicesStream;
+  Stream<List<Device>> get discoveredDevicesStream =>
+      _client.discoveredDevicesStream;
 
   @override
   Stream<PeerConnectionInfo?> get connectionStream =>
@@ -79,7 +87,9 @@ final class PeerClientImpl implements PeerClient {
       startDiscoveryWithEndpoint(localPeer: localUser.toEndpoint());
 
   @override
-  Future<void> startDiscoveryWithEndpoint({required PeerEndpoint localPeer}) async {
+  Future<void> startDiscoveryWithEndpoint({
+    required PeerEndpoint localPeer,
+  }) async {
     _localEndpoint = localPeer;
     await _facade.startClientTransportSession();
     await _client.startDiscovery(localPeer: localPeer);
@@ -96,6 +106,9 @@ final class PeerClientImpl implements PeerClient {
 
   @override
   Future<void> connect(Device device) => _client.connectToDevice(device);
+
+  @override
+  Future<void> cancelPendingConnection() => _client.cancelPendingConnection();
 
   @override
   Future<void> send(PeerMessage message) =>

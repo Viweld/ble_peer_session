@@ -43,10 +43,14 @@ final class BluetoothPermissionsUtils {
           ].request(),
         );
       }
-      return _aggregate(await [Permission.bluetooth, Permission.location].request());
+      return _aggregate(
+        await [Permission.bluetooth, Permission.location].request(),
+      );
     }
     if (Platform.isIOS) {
-      return _aggregate(await [Permission.bluetooth, Permission.locationWhenInUse].request());
+      return _aggregate(
+        await [Permission.bluetooth, Permission.locationWhenInUse].request(),
+      );
     }
     return PermissionStatus.denied;
   }

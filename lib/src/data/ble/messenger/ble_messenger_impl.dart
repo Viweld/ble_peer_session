@@ -16,10 +16,10 @@ final class BleMessengerImpl implements Messenger {
   }) : _connector = connector,
        _log = logger,
        _codec = codec {
-    _incomingRawMessagesSubscription = connector.incomingRawMessageStream.listen(
-      _incomingRawMessagesListener,
-    );
-    _incomingMessagesController = StreamController<TransportMessage>.broadcast();
+    _incomingRawMessagesSubscription = connector.incomingRawMessageStream
+        .listen(_incomingRawMessagesListener);
+    _incomingMessagesController =
+        StreamController<TransportMessage>.broadcast();
   }
 
   final BleLinkBase _connector;
@@ -30,7 +30,8 @@ final class BleMessengerImpl implements Messenger {
   late final StreamController<TransportMessage> _incomingMessagesController;
 
   @override
-  Stream<TransportMessage> get messagesStream => _incomingMessagesController.stream;
+  Stream<TransportMessage> get messagesStream =>
+      _incomingMessagesController.stream;
 
   @override
   Future<void> sendMessage(TransportMessage message) async {

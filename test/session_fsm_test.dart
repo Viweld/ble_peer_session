@@ -34,7 +34,10 @@ void main() {
 
   test('maps awaiting user decision to public phase', () {
     final info = PeerConnectionMapper.fromSessionState(
-      TransportSessionAwaitingUserDecision(localPeer: localPeer, remotePeer: remotePeer),
+      TransportSessionAwaitingUserDecision(
+        localPeer: localPeer,
+        remotePeer: remotePeer,
+      ),
     );
 
     expect(info?.phase, PeerConnectionPhase.awaitingUserDecision);

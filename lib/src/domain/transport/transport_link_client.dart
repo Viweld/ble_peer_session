@@ -12,4 +12,7 @@ abstract interface class TransportLinkClient implements TransportLink {
   Future<void> refreshDiscovery();
 
   Future<void> connectToDevice(Device device);
+
+  /// Aborts an in-flight GATT connect. Idempotent; no-op if nothing is pending.
+  Future<void> cancelPendingConnection();
 }

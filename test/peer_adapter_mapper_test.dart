@@ -21,7 +21,9 @@ void main() {
 
     test('maps unauthorized adapter state', () {
       expect(
-        PeerAdapterMapper.fromFlutterBluePlus(BluetoothAdapterState.unauthorized),
+        PeerAdapterMapper.fromFlutterBluePlus(
+          BluetoothAdapterState.unauthorized,
+        ),
         PeerAdapterStatus.unauthorized,
       );
     });

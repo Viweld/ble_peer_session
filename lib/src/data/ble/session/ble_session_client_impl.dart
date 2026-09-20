@@ -6,34 +6,43 @@ import '../../../domain/models/peer_disconnect_reason.dart';
 import '../../../domain/models/peer_endpoint.dart';
 import '../../../domain/transport/messenger.dart';
 import '../../../domain/transport/models/transport_session_state.dart';
+import '../../../domain/transport/transport_link_client.dart';
 import '../../../domain/transport/transport_session_client.dart';
-import '../link/ble_link_client_impl.dart';
 import 'ble_session_base.dart';
 import 'session_heartbeat_send.dart';
 
-final class BleSessionClientImpl extends BleSessionBase implements TransportSessionClient {
-  BleSessionClientImpl({required BleLinkClientImpl link, required Messenger messenger})
-    : _link = link,
-      _messenger = messenger {
+final class BleSessionClientImpl extends BleSessionBase
+    implements TransportSessionClient {
+  BleSessionClientImpl({
+    required TransportLinkClient link,
+    required Messenger messenger,
+  }) : _link = link,
+       _messenger = messenger {
     bindLinkLostStream(_link.linkLostStream);
-    _unhandledMessagesSubscription = _messenger.messagesStream.listen(_messagesHandler);
+    _unhandledMessagesSubscription = _messenger.messagesStream.listen(
+      _messagesHandler,
+    );
     _handledMessagesController = StreamController<TransportMessage>.broadcast();
   }
 
-  final BleLinkClientImpl _link;
+  final TransportLinkClient _link;
   final Messenger _messenger;
 
-  late final StreamSubscription<TransportMessage> _unhandledMessagesSubscription;
+  late final StreamSubscription<TransportMessage>
+  _unhandledMessagesSubscription;
   late final StreamController<TransportMessage> _handledMessagesController;
 
   @override
-  Stream<List<Device>> get discoveredDevicesStream => _link.discoveredDevicesStream;
+  Stream<List<Device>> get discoveredDevicesStream =>
+      _link.discoveredDevicesStream;
 
   @override
-  Stream<TransportMessage> get messagesStream => _handledMessagesController.stream;
+  Stream<TransportMessage> get messagesStream =>
+      _handledMessagesController.stream;
 
   @override
-  Future<void> sendMessage(TransportMessage message) => _messenger.sendMessage(message);
+  Future<void> sendMessage(TransportMessage message) =>
+      _messenger.sendMessage(message);
 
   @override
   Future<void> startDiscovery({required PeerEndpoint localPeer}) async {
@@ -52,6 +61,17 @@ final class BleSessionClientImpl extends BleSessionBase implements TransportSess
     await _link.connectToDevice(device);
     await _messenger.sendMessage(InvitationMessage(peerEndpoint: localPeer));
     onConnectionInvitationSent();
+  }
+
+  @override
+  Future<void> cancelPendingConnection() async {
+    final TransportSessionState? state = currentConnectionState;
+    if (state is TransportSessionConnected) return;
+
+    await _link.cancelPendingConnection();
+    if (state is TransportSessionAwaitingRemoteDecision) {
+      onConnectionRequestRemoteRejected();
+    }
   }
 
   @override
@@ -88,7 +108,8 @@ final class BleSessionClientImpl extends BleSessionBase implements TransportSess
   Future<void> sendHeartbeatPing() async {
     if (currentConnectionState is! TransportSessionConnected) return;
     await sendSessionHeartbeat(
-      () => _messenger.sendMessage(HeartbeatPingMessage(peerEndpoint: localPeer)),
+      () =>
+          _messenger.sendMessage(HeartbeatPingMessage(peerEndpoint: localPeer)),
     );
   }
 
@@ -127,7 +148,9 @@ final class BleSessionClientImpl extends BleSessionBase implements TransportSess
       case HeartbeatPingMessage():
         recordSessionActivity();
         await sendSessionHeartbeat(
-          () => _messenger.sendMessage(HeartbeatPongMessage(peerEndpoint: localPeer)),
+          () => _messenger.sendMessage(
+            HeartbeatPongMessage(peerEndpoint: localPeer),
+          ),
         );
         return true;
       case HeartbeatPongMessage():

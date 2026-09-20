@@ -14,19 +14,26 @@ final class TransportSessionDisconnected extends TransportSessionState {
 
 /// Host received an invite and waits for the user to accept or reject.
 final class TransportSessionAwaitingUserDecision extends TransportSessionState {
-  const TransportSessionAwaitingUserDecision({required super.localPeer, required this.remotePeer});
+  const TransportSessionAwaitingUserDecision({
+    required super.localPeer,
+    required this.remotePeer,
+  });
 
   final PeerEndpoint remotePeer;
 }
 
 /// Client sent an invite and waits for the host response.
-final class TransportSessionAwaitingRemoteDecision extends TransportSessionState {
+final class TransportSessionAwaitingRemoteDecision
+    extends TransportSessionState {
   const TransportSessionAwaitingRemoteDecision({required super.localPeer});
 }
 
 /// Session is established and application messages can flow.
 final class TransportSessionConnected extends TransportSessionState {
-  const TransportSessionConnected({required super.localPeer, required this.remotePeer});
+  const TransportSessionConnected({
+    required super.localPeer,
+    required this.remotePeer,
+  });
 
   final PeerEndpoint remotePeer;
 }

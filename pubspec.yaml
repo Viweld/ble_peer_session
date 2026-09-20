@@ -1,6 +1,6 @@
 name: ble_peer_session
 description: Offline 1:1 peer sessions over BLE for Flutter — host/client model, invitation handshake, and bidirectional messaging.
-version: 0.4.4
+version: 0.5.0
 homepage: https://github.com/Viweld/ble_peer_session
 repository: https://github.com/Viweld/ble_peer_session
 issue_tracker: https://github.com/Viweld/ble_peer_session/issues
@@ -31,3 +31,10 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+
+flutter:
+  plugin:
+    platforms:
+      android:
+        package: dev.viweld.ble_peer_session
+        pluginClass: BlePeerSessionPlugin

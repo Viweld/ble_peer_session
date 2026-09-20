@@ -10,26 +10,34 @@ import '../link/ble_link_server_impl.dart';
 import 'ble_session_base.dart';
 import 'session_heartbeat_send.dart';
 
-final class BleSessionServerImpl extends BleSessionBase implements TransportSessionServer {
-  BleSessionServerImpl({required BleLinkServerImpl link, required Messenger messenger})
-    : _link = link,
-      _messenger = messenger {
+final class BleSessionServerImpl extends BleSessionBase
+    implements TransportSessionServer {
+  BleSessionServerImpl({
+    required BleLinkServerImpl link,
+    required Messenger messenger,
+  }) : _link = link,
+       _messenger = messenger {
     bindLinkLostStream(_link.linkLostStream);
-    _unhandledMessagesSubscription = _messenger.messagesStream.listen(_messagesHandler);
+    _unhandledMessagesSubscription = _messenger.messagesStream.listen(
+      _messagesHandler,
+    );
     _handledMessagesController = StreamController<TransportMessage>.broadcast();
   }
 
   final BleLinkServerImpl _link;
   final Messenger _messenger;
 
-  late final StreamSubscription<TransportMessage> _unhandledMessagesSubscription;
+  late final StreamSubscription<TransportMessage>
+  _unhandledMessagesSubscription;
   late final StreamController<TransportMessage> _handledMessagesController;
 
   @override
-  Stream<TransportMessage> get messagesStream => _handledMessagesController.stream;
+  Stream<TransportMessage> get messagesStream =>
+      _handledMessagesController.stream;
 
   @override
-  Future<void> sendMessage(TransportMessage message) => _messenger.sendMessage(message);
+  Future<void> sendMessage(TransportMessage message) =>
+      _messenger.sendMessage(message);
 
   @override
   Future<void> startAdvertising({required PeerEndpoint localPeer}) async {
@@ -86,7 +94,8 @@ final class BleSessionServerImpl extends BleSessionBase implements TransportSess
   Future<void> sendHeartbeatPing() async {
     if (currentConnectionState is! TransportSessionConnected) return;
     await sendSessionHeartbeat(
-      () => _messenger.sendMessage(HeartbeatPingMessage(peerEndpoint: localPeer)),
+      () =>
+          _messenger.sendMessage(HeartbeatPingMessage(peerEndpoint: localPeer)),
     );
   }
 
@@ -122,7 +131,9 @@ final class BleSessionServerImpl extends BleSessionBase implements TransportSess
       case HeartbeatPingMessage():
         recordSessionActivity();
         await sendSessionHeartbeat(
-          () => _messenger.sendMessage(HeartbeatPongMessage(peerEndpoint: localPeer)),
+          () => _messenger.sendMessage(
+            HeartbeatPongMessage(peerEndpoint: localPeer),
+          ),
         );
         return true;
       case HeartbeatPongMessage():

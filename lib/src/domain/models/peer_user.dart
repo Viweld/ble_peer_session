@@ -7,7 +7,11 @@ import 'peer_identity.dart';
 /// The local or remote player visible to your app (not a BLE/GATT concept).
 @immutable
 final class PeerUser {
-  const PeerUser({required this.id, required this.displayName, this.deviceLabel});
+  const PeerUser({
+    required this.id,
+    required this.displayName,
+    this.deviceLabel,
+  });
 
   final String id;
   final String displayName;
@@ -19,7 +23,11 @@ final class PeerUser {
   PeerEndpoint toEndpoint({String? deviceId}) {
     return PeerEndpoint(
       identity: PeerIdentity(id: id, displayName: displayName),
-      device: Device(id: deviceId ?? id, name: deviceLabel ?? displayName, isOurApp: true),
+      device: Device(
+        id: deviceId ?? id,
+        name: deviceLabel ?? displayName,
+        isOurApp: true,
+      ),
     );
   }
 

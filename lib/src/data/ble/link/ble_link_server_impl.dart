@@ -7,28 +7,40 @@ import '../../../config/ble_peer_config.dart';
 import '../../../domain/exceptions/peer_exception.dart';
 import '../../../domain/logger/logger.dart';
 import '../../../domain/transport/transport_link_server.dart';
+import '../../../platform/ble_session_retention.dart';
 import '../platform/android_peripheral_shutdown.dart';
 import 'ble_link_base.dart';
 import 'ble_link_readiness.dart';
 
-final class BleLinkServerImpl extends BleLinkBase implements TransportLinkServer {
-  BleLinkServerImpl({required Logger logger, required BlePeerConfig config})
-    : _log = logger,
-      super(
-        appName: config.appName,
-        serviceId: config.serviceUuid,
-        characteristicId: config.characteristicUuid,
-      );
+final class BleLinkServerImpl extends BleLinkBase
+    implements TransportLinkServer {
+  BleLinkServerImpl({
+    required Logger logger,
+    required BlePeerConfig config,
+    BleSessionRetention retention = const NoOpBleSessionRetention(),
+  }) : _log = logger,
+       _retention = retention,
+       super(
+         appName: config.appName,
+         serviceId: config.serviceUuid,
+         characteristicId: config.characteristicUuid,
+       );
 
   final Logger _log;
+  final BleSessionRetention _retention;
+  bool _sessionRetained = false;
   PeripheralManager? _peripheralManager;
   GATTCharacteristic? _writeCharacteristic;
-  StreamSubscription<GATTCharacteristicWriteRequestedEventArgs>? _writeRequestSubscription;
-  StreamSubscription<CentralConnectionStateChangedEventArgs>? _connectionStateSubscription;
-  StreamSubscription<GATTCharacteristicNotifyStateChangedEventArgs>? _notifyStateSubscription;
+  StreamSubscription<GATTCharacteristicWriteRequestedEventArgs>?
+  _writeRequestSubscription;
+  StreamSubscription<CentralConnectionStateChangedEventArgs>?
+  _connectionStateSubscription;
+  StreamSubscription<GATTCharacteristicNotifyStateChangedEventArgs>?
+  _notifyStateSubscription;
   final Map<String, Central> _connectedClients = {};
 
-  PeripheralManager get _peripheral => _peripheralManager ??= PeripheralManager();
+  PeripheralManager get _peripheral =>
+      _peripheralManager ??= PeripheralManager();
 
   @override
   bool get isPhysicallyConnected => _connectedClients.isNotEmpty;
@@ -49,7 +61,10 @@ final class BleLinkServerImpl extends BleLinkBase implements TransportLinkServer
           GATTCharacteristicProperty.write,
           GATTCharacteristicProperty.notify,
         ],
-        permissions: [GATTCharacteristicPermission.read, GATTCharacteristicPermission.write],
+        permissions: [
+          GATTCharacteristicPermission.read,
+          GATTCharacteristicPermission.write,
+        ],
         descriptors: [],
       );
 
@@ -62,28 +77,31 @@ final class BleLinkServerImpl extends BleLinkBase implements TransportLinkServer
 
       await _peripheral.addService(service);
 
-      _writeRequestSubscription = _peripheral.characteristicWriteRequested.listen(
-        _peripheralEventHandler,
-      );
+      _writeRequestSubscription = _peripheral.characteristicWriteRequested
+          .listen(_peripheralEventHandler);
 
-      _connectionStateSubscription = _peripheral.connectionStateChanged.listen((event) {
+      _connectionStateSubscription = _peripheral.connectionStateChanged.listen((
+        event,
+      ) {
         if (event.state != ConnectionState.disconnected) return;
         final String centralId = event.central.uuid.toString();
         if (!_connectedClients.containsKey(centralId)) return;
         _handleGattDisconnected();
       });
 
-      _notifyStateSubscription = _peripheral.characteristicNotifyStateChanged.listen((event) {
-        if (event.state) return;
-        if (event.characteristic.uuid != super.characteristicUuid) return;
-        final String centralId = event.central.uuid.toString();
-        if (!_connectedClients.containsKey(centralId)) return;
-        _handleGattDisconnected();
-      });
+      _notifyStateSubscription = _peripheral.characteristicNotifyStateChanged
+          .listen((event) {
+            if (event.state) return;
+            if (event.characteristic.uuid != super.characteristicUuid) return;
+            final String centralId = event.central.uuid.toString();
+            if (!_connectedClients.containsKey(centralId)) return;
+            _handleGattDisconnected();
+          });
 
       await _peripheral.startAdvertising(
         Advertisement(name: deviceName, serviceUUIDs: [super.serviceUuid]),
       );
+      await _retainSession();
     } on PeerException {
       rethrow;
     } on Object catch (e) {
@@ -98,6 +116,10 @@ final class BleLinkServerImpl extends BleLinkBase implements TransportLinkServer
   @override
   Future<void> stopAdvertising() async {
     if (_peripheralManager == null) return;
+
+    if (_connectedClients.isEmpty) {
+      await _releaseRetention();
+    }
 
     try {
       await _peripheral.stopAdvertising();
@@ -121,7 +143,11 @@ final class BleLinkServerImpl extends BleLinkBase implements TransportLinkServer
 
     for (final client in _connectedClients.entries) {
       try {
-        await _peripheral.notifyCharacteristic(client.value, _writeCharacteristic!, value: frame);
+        await _peripheral.notifyCharacteristic(
+          client.value,
+          _writeCharacteristic!,
+          value: frame,
+        );
       } catch (e) {
         _log.e('Failed to notify central ${client.key}: $e');
       }
@@ -132,6 +158,7 @@ final class BleLinkServerImpl extends BleLinkBase implements TransportLinkServer
   Future<void> disconnect() async {
     beginIntentionalDisconnect();
     _connectedClients.clear();
+    await _releaseRetention();
     resetIntentionalDisconnect();
   }
 
@@ -143,12 +170,14 @@ final class BleLinkServerImpl extends BleLinkBase implements TransportLinkServer
     await _shutdownPeripheralStack();
     beginIntentionalDisconnect();
     _connectedClients.clear();
+    await _releaseRetention();
     resetIntentionalDisconnect();
   }
 
   void _handleGattDisconnected() {
     if (intentionalDisconnect) return;
     _connectedClients.clear();
+    unawaited(_releaseRetention());
     emitLinkLost();
   }
 
@@ -173,7 +202,9 @@ final class BleLinkServerImpl extends BleLinkBase implements TransportLinkServer
     await openAndroidGattServer();
   }
 
-  Future<void> _peripheralEventHandler(GATTCharacteristicWriteRequestedEventArgs event) async {
+  Future<void> _peripheralEventHandler(
+    GATTCharacteristicWriteRequestedEventArgs event,
+  ) async {
     final clientId = event.central.uuid.toString();
 
     if (!_connectedClients.containsKey(clientId)) {
@@ -190,5 +221,17 @@ final class BleLinkServerImpl extends BleLinkBase implements TransportLinkServer
 
     translateIncomingData(event.request.value);
     await _peripheral.respondWriteRequest(event.request);
+  }
+
+  Future<void> _retainSession() async {
+    if (_sessionRetained) return;
+    await _retention.retain();
+    _sessionRetained = true;
+  }
+
+  Future<void> _releaseRetention() async {
+    if (!_sessionRetained) return;
+    _sessionRetained = false;
+    await _retention.release();
   }
 }

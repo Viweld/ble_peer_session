@@ -30,11 +30,17 @@ final class BleFrameCodec {
 
     if (message.isEmpty) {
       return <Uint8List>[
-        _buildFrame(messageId: messageId, chunkIndex: 0, totalChunks: 1, payload: message),
+        _buildFrame(
+          messageId: messageId,
+          chunkIndex: 0,
+          totalChunks: 1,
+          payload: message,
+        ),
       ];
     }
 
-    final int totalChunks = (message.length + maxChunkPayloadSize - 1) ~/ maxChunkPayloadSize;
+    final int totalChunks =
+        (message.length + maxChunkPayloadSize - 1) ~/ maxChunkPayloadSize;
     if (totalChunks > 0xFFFF) {
       throwPeer(PeerErrorCode.payloadTooLarge);
     }
@@ -122,7 +128,8 @@ final class BleFrameHeader {
 
 /// Accumulates frame payloads until a full logical message is ready.
 final class BleFrameAssembler {
-  BleFrameAssembler({BleFrameCodec codec = const BleFrameCodec()}) : _codec = codec;
+  BleFrameAssembler({BleFrameCodec codec = const BleFrameCodec()})
+    : _codec = codec;
 
   final BleFrameCodec _codec;
   final Map<int, _PartialMessage> _partials = <int, _PartialMessage>{};

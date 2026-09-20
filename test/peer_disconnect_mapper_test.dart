@@ -11,7 +11,11 @@ void main() {
     );
     final PeerEndpoint remotePeer = PeerEndpoint(
       identity: const PeerIdentity(id: 'remote', displayName: 'Remote'),
-      device: const Device(id: 'dev-remote', name: 'RemotePhone', isOurApp: true),
+      device: const Device(
+        id: 'dev-remote',
+        name: 'RemotePhone',
+        isOurApp: true,
+      ),
     );
 
     final PeerDisconnectInfo info = PeerDisconnectMapper.fromTransport(

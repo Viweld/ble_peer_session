@@ -213,6 +213,33 @@ Reserved session types (`PeerMessageTypes.*`) are handled automatically during h
 
 **Common issue:** if discovery doesn't work, check location and Bluetooth permissions on Android 12+ (`await peer.permissions.checkPermissions()`).
 
+Optional Android foreground retention (keeps GATT alive when the UI is backgrounded). Off unless configured:
+
+```dart
+final peer = Peer.create(
+  config: BlePeerConfig.forApp(
+    'MyGame',
+    androidForeground: BleAndroidForegroundConfig(
+      title: 'MyGame',
+      body: 'Bluetooth peer session is active',
+      smallIcon: '@drawable/ic_stat_my_game', // optional; omit for the package icon
+    ),
+  ),
+);
+```
+
+The plugin merges `FOREGROUND_SERVICE` / `FOREGROUND_SERVICE_CONNECTED_DEVICE`. The host must still request `POST_NOTIFICATIONS` on Android 13+ if it wants the notification visible. Invalid `smallIcon` throws `PeerException` (`unexpected`) with a `PlatformException` cause — it does not crash native code.
+
+`nearbyHostsStream` emits **live snapshots** of currently advertised hosts (not a historical union). Starting a scan emits `[]` first. Hosts that stop advertising disappear after `discoveryStaleAfter` (default 3 seconds).
+
+Cancel an in-flight client connect:
+
+```dart
+await client.cancelPendingConnection();
+```
+
+That aborts the GATT attempt so the next `invite` / `connect` can start immediately.
+
 ### Bluetooth adapter
 
 The package **does not** turn Bluetooth on. Observe status and guide the user:
@@ -305,6 +332,7 @@ Legacy peers that send raw JSON without the framing header (`version != 0x01`) a
 - [Documentation index](doc/README.md)
 - [0.1.x → 0.2.0](doc/MIGRATION.md)
 - [0.2.x → 0.3.0](doc/MIGRATION_0.3.md)
+- [0.4.x → 0.5.0](doc/MIGRATION_0.5.md)
 
 ---
 

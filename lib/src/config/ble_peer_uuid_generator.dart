@@ -5,12 +5,21 @@ import 'ble_peer_config.dart';
 
 /// Derives stable BLE UUIDs from [appName] so every install of the same app can find each other.
 abstract final class BlePeerUuidGenerator {
-  static BlePeerConfig configFor(String appName, {String deviceNamePrefix = ''}) {
+  static BlePeerConfig configFor(
+    String appName, {
+    String deviceNamePrefix = '',
+    Duration discoveryStaleAfter = const Duration(seconds: 3),
+    Duration discoverySweepInterval = const Duration(milliseconds: 400),
+    BleAndroidForegroundConfig? androidForeground,
+  }) {
     return BlePeerConfig(
       appName: appName,
       serviceUuid: uuidFor(appName: appName, kind: 'service'),
       characteristicUuid: uuidFor(appName: appName, kind: 'characteristic'),
       deviceNamePrefix: deviceNamePrefix,
+      discoveryStaleAfter: discoveryStaleAfter,
+      discoverySweepInterval: discoverySweepInterval,
+      androidForeground: androidForeground,
     );
   }
 

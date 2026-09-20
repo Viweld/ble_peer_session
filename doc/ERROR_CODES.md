@@ -52,8 +52,8 @@ See also: [main README](../README.md) · [doc index](README.md)
 | Code | Typical cause | Suggested handling |
 |------|---------------|-------------------|
 | `disposed` | Used after `peer.dispose()` | Create new `Peer` |
-| `operationCancelled` | Operation aborted | No-op or retry |
-| `unexpected` | Unmapped platform error | Log `cause`; generic error UI |
+| `operationCancelled` | In-flight connect aborted | Treat as user cancel; retry is allowed immediately |
+| `unexpected` | Unmapped platform error, including FGS start refusal / invalid `smallIcon` | Log `cause`; generic error UI |
 
 ---
 

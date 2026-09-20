@@ -34,9 +34,11 @@ abstract interface class PeerHost implements PeerSessionMessaging {
 }
 
 final class PeerHostImpl implements PeerHost {
-  PeerHostImpl({required TransportFacade facade, required TransportSessionServer server})
-    : _facade = facade,
-      _server = server;
+  PeerHostImpl({
+    required TransportFacade facade,
+    required TransportSessionServer server,
+  }) : _facade = facade,
+       _server = server;
 
   final TransportFacade _facade;
   final TransportSessionServer _server;

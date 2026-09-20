@@ -13,6 +13,7 @@ import '../domain/services/bluetooth_state_service.dart';
 import '../domain/transport/transport_facade.dart';
 import '../domain/transport/transport_session_client.dart';
 import '../domain/transport/transport_session_server.dart';
+import '../platform/ble_session_retention.dart';
 
 /// Internal module that wires BLE link, messenger, and session implementations.
 final class BlePeerSessionModule {
@@ -30,13 +31,37 @@ final class BlePeerSessionModule {
   final BluetoothStateService bluetoothStateService;
   final BluetoothPermissionsService bluetoothPermissionsService;
 
-  factory BlePeerSessionModule.create({required BlePeerConfig config, required Logger logger}) {
-    final linkClient = BleLinkClientImpl(logger: logger, config: config);
-    final linkServer = BleLinkServerImpl(logger: logger, config: config);
-    final messengerClient = BleMessengerImpl(connector: linkClient, logger: logger);
-    final messengerServer = BleMessengerImpl(connector: linkServer, logger: logger);
-    final sessionClient = BleSessionClientImpl(link: linkClient, messenger: messengerClient);
-    final sessionServer = BleSessionServerImpl(link: linkServer, messenger: messengerServer);
+  factory BlePeerSessionModule.create({
+    required BlePeerConfig config,
+    required Logger logger,
+    BleSessionRetention retention = const NoOpBleSessionRetention(),
+  }) {
+    final linkClient = BleLinkClientImpl(
+      logger: logger,
+      config: config,
+      retention: retention,
+    );
+    final linkServer = BleLinkServerImpl(
+      logger: logger,
+      config: config,
+      retention: retention,
+    );
+    final messengerClient = BleMessengerImpl(
+      connector: linkClient,
+      logger: logger,
+    );
+    final messengerServer = BleMessengerImpl(
+      connector: linkServer,
+      logger: logger,
+    );
+    final sessionClient = BleSessionClientImpl(
+      link: linkClient,
+      messenger: messengerClient,
+    );
+    final sessionServer = BleSessionServerImpl(
+      link: linkServer,
+      messenger: messengerServer,
+    );
     final facade = BleTransportFacadeImpl(
       transportSessionClient: sessionClient,
       transportSessionServer: sessionServer,
@@ -49,6 +74,12 @@ final class BlePeerSessionModule {
       bluetoothStateService: BluetoothStateServiceImpl(),
       bluetoothPermissionsService: BluetoothPermissionsServiceImpl(),
     );
+  }
+
+  Future<void> tearDownForTaskRemoval() async {
+    await transportSessionClient.cancelPendingConnection();
+    await transportSessionClient.disconnect();
+    await transportSessionServer.disconnect();
   }
 
   Future<void> dispose() => transportFacade.dispose();

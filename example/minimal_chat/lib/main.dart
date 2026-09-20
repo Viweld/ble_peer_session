@@ -33,7 +33,9 @@ final class RolePickerScreen extends StatefulWidget {
 }
 
 final class _RolePickerScreenState extends State<RolePickerScreen> {
-  final TextEditingController _nameController = TextEditingController(text: 'Player');
+  final TextEditingController _nameController = TextEditingController(
+    text: 'Player',
+  );
   bool _starting = false;
   String? _error;
 
@@ -56,7 +58,14 @@ final class _RolePickerScreenState extends State<RolePickerScreen> {
     });
 
     try {
-      final Peer peer = Peer.create(appName: 'MinimalChat');
+      final Peer peer = Peer.create(
+        config: BlePeerConfig.forApp(
+          'MinimalChat',
+          androidForeground: const BleAndroidForegroundConfig(
+            title: 'Minimal Chat',
+          ),
+        ),
+      );
       await peer.permissions.checkPermissions();
 
       if (!mounted) {
@@ -124,7 +133,10 @@ final class _RolePickerScreenState extends State<RolePickerScreen> {
             ],
             if (_error != null) ...<Widget>[
               const SizedBox(height: 16),
-              Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+              Text(
+                _error!,
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
             ],
           ],
         ),
@@ -134,7 +146,12 @@ final class _RolePickerScreenState extends State<RolePickerScreen> {
 }
 
 final class ChatScreen extends StatefulWidget {
-  const ChatScreen({required this.peer, required this.role, required this.localUser, super.key});
+  const ChatScreen({
+    required this.peer,
+    required this.role,
+    required this.localUser,
+    super.key,
+  });
 
   final Peer peer;
   final ChatRole role;
@@ -151,7 +168,8 @@ final class _ChatScreenState extends State<ChatScreen> {
   String? _remoteName;
   final List<_ChatLine> _lines = <_ChatLine>[];
   final TextEditingController _messageController = TextEditingController();
-  final List<StreamSubscription<Object?>> _subscriptions = <StreamSubscription<Object?>>[];
+  final List<StreamSubscription<Object?>> _subscriptions =
+      <StreamSubscription<Object?>>[];
   List<PeerNearby> _nearbyHosts = <PeerNearby>[];
   String? _status;
   bool _busy = false;
@@ -174,7 +192,9 @@ final class _ChatScreenState extends State<ChatScreen> {
       return;
     }
 
-    final PeerClient client = await widget.peer.client(localUser: widget.localUser);
+    final PeerClient client = await widget.peer.client(
+      localUser: widget.localUser,
+    );
     _client = client;
     _listenClient(client);
     setState(() {
@@ -318,9 +338,13 @@ final class _ChatScreenState extends State<ChatScreen> {
     return switch (phase) {
       PeerConnectionPhase.idle => 'Idle',
       PeerConnectionPhase.waitingForPeer =>
-        widget.role == ChatRole.host ? 'Waiting for invite…' : 'Pick a host below',
-      PeerConnectionPhase.awaitingUserDecision => 'Invite received — accepting…',
-      PeerConnectionPhase.awaitingRemoteDecision => 'Waiting for host response…',
+        widget.role == ChatRole.host
+            ? 'Waiting for invite…'
+            : 'Pick a host below',
+      PeerConnectionPhase.awaitingUserDecision =>
+        'Invite received — accepting…',
+      PeerConnectionPhase.awaitingRemoteDecision =>
+        'Waiting for host response…',
       PeerConnectionPhase.connected => 'Connected',
     };
   }
@@ -342,14 +366,19 @@ final class _ChatScreenState extends State<ChatScreen> {
     final String title = widget.role == ChatRole.host ? 'Host' : 'Client';
 
     return Scaffold(
-      appBar: AppBar(title: Text('$title${_remoteName == null ? '' : ' · $_remoteName'}')),
+      appBar: AppBar(
+        title: Text('$title${_remoteName == null ? '' : ' · $_remoteName'}'),
+      ),
       body: Column(
         children: <Widget>[
           if (_status != null)
             Material(
               color: Theme.of(context).colorScheme.surfaceContainerHighest,
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 child: Row(
                   children: <Widget>[
                     Expanded(child: Text(_status!)),
@@ -391,14 +420,21 @@ final class _ChatScreenState extends State<ChatScreen> {
                 itemBuilder: (BuildContext context, int index) {
                   final _ChatLine line = _lines[index];
                   return Align(
-                    alignment: line.outgoing ? Alignment.centerRight : Alignment.centerLeft,
+                    alignment: line.outgoing
+                        ? Alignment.centerRight
+                        : Alignment.centerLeft,
                     child: Container(
                       margin: const EdgeInsets.only(bottom: 8),
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
                       decoration: BoxDecoration(
                         color: line.outgoing
                             ? Theme.of(context).colorScheme.primaryContainer
-                            : Theme.of(context).colorScheme.surfaceContainerHighest,
+                            : Theme.of(
+                                context,
+                              ).colorScheme.surfaceContainerHighest,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(line.text),
@@ -407,11 +443,14 @@ final class _ChatScreenState extends State<ChatScreen> {
                 },
               ),
             ),
-          if (_phase == PeerConnectionPhase.awaitingUserDecision && widget.role == ChatRole.host)
+          if (_phase == PeerConnectionPhase.awaitingUserDecision &&
+              widget.role == ChatRole.host)
             Padding(
               padding: const EdgeInsets.all(16),
               child: FilledButton(
-                onPressed: _busy ? null : () => unawaited(_acceptInvite(_host!)),
+                onPressed: _busy
+                    ? null
+                    : () => unawaited(_acceptInvite(_host!)),
                 child: const Text('Accept invite'),
               ),
             ),
@@ -430,12 +469,16 @@ final class _ChatScreenState extends State<ChatScreen> {
                         border: OutlineInputBorder(),
                       ),
                       textInputAction: TextInputAction.send,
-                      onSubmitted: connected ? (_) => unawaited(_sendMessage()) : null,
+                      onSubmitted: connected
+                          ? (_) => unawaited(_sendMessage())
+                          : null,
                     ),
                   ),
                   const SizedBox(width: 8),
                   IconButton.filled(
-                    onPressed: connected ? () => unawaited(_sendMessage()) : null,
+                    onPressed: connected
+                        ? () => unawaited(_sendMessage())
+                        : null,
                     icon: const Icon(Icons.send),
                   ),
                 ],

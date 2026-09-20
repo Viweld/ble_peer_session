@@ -5,6 +5,7 @@ Supplementary guides for [ble_peer_session](../README.md).
 | Guide | When to read |
 |-------|--------------|
 | [Main README](../README.md) | Start here — TL;DR, quick start, API levels |
+| [DECISIONS.md](DECISIONS.md) | Architecture decisions BPS-01…BPS-10 (0.5.0) |
 | [MIGRATION.md](MIGRATION.md) | Upgrading from 0.1.x to 0.2.0 |
 | [MIGRATION_0.3.md](MIGRATION_0.3.md) | Adopting the 0.3 beginner API (0.2 APIs still work) |
 | [ERROR_CODES.md](ERROR_CODES.md) | Handling `PeerException` / `PeerErrorCode` |

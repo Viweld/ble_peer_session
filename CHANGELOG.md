@@ -1,3 +1,13 @@
+## 0.5.0
+
+- **Plugin:** package is now a Flutter plugin with an optional Android connected-device foreground service.
+- **API:** `BlePeerConfig.androidForeground` — `null` keeps FGS off for existing consumers.
+- **API:** `BleAndroidForegroundConfig` (title, body, optional `smallIcon`). `smallIcon == null` uses the package generic status-bar icon.
+- **API:** `PeerClient.cancelPendingConnection()` aborts an in-flight GATT connect.
+- **Discovery:** `nearbyHostsStream` is a live snapshot; scan start emits `[]`; foreign apps never enter the registry; lastSeen refreshes on every observation; `discoveryStaleAfter` (default 3s) expires stale hosts.
+- **Android:** FGS starts on user-initiated establishment (host advertising / client connect), `START_NOT_STICKY`, task swipe tears down the transport then stops the service.
+- **Docs:** [DECISIONS.md](doc/DECISIONS.md) BPS-01…BPS-10.
+
 ## 0.4.4
 
 - **Transport:** retry transient GATT central writes up to 3 times before failing (`BleGattWritePolicy`).
