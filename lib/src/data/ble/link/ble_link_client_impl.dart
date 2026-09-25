@@ -10,6 +10,7 @@ import '../../../domain/models/device.dart';
 import '../../../domain/transport/transport_link_client.dart';
 import '../../../platform/ble_session_retention.dart';
 import '../discovery/ble_discovery_registry.dart';
+import 'ble_device_address.dart';
 import 'ble_gatt_write_policy.dart';
 import 'ble_link_base.dart';
 import 'ble_link_readiness.dart';
@@ -79,7 +80,11 @@ final class BleLinkClientImpl extends BleLinkBase
         _processDiscoveredDevice(event.peripheral, event.advertisement);
       });
 
-      await _centralManager.startDiscovery(serviceUUIDs: [super.serviceUuid]);
+      // Hardware ScanFilter on the 16-bit Bluetooth-base service UUID matches
+      // nothing on Samsung (A01/A12): the controller counts hundreds of
+      // advertisements and delivers zero. Name and UUID are checked in
+      // [_isOurApplication] after the packet arrives.
+      await _centralManager.startDiscovery(serviceUUIDs: const <UUID>[]);
     } on PeerException {
       rethrow;
     } on Object catch (e, stackTrace) {
@@ -114,11 +119,7 @@ final class BleLinkClientImpl extends BleLinkBase
 
   @override
   Future<void> connectToDevice(Device device) async {
-    final peripheral = _discoveredPeripherals[device.id];
-    if (peripheral == null) {
-      throwPeer(PeerErrorCode.deviceNotFound);
-    }
-
+    final Peripheral peripheral = await _resolvePeripheral(device);
     final int generation = _beginConnect(peripheral);
     try {
       resetIntentionalDisconnect();
@@ -376,11 +377,25 @@ final class BleLinkClientImpl extends BleLinkBase
 
   void _emitDiscoveredSnapshot(List<Device> devices) {
     if (_discoveredDevicesController.isClosed) return;
-    final Set<String> liveIds = devices
-        .map((Device device) => device.id)
-        .toSet();
-    _discoveredPeripherals.removeWhere((String id, _) => !liveIds.contains(id));
+    // Keep last-seen peripherals. A TTL sweep must not drop the object while
+    // the UI snapshot still offers that host for invite.
     _discoveredDevicesController.add(devices);
+  }
+
+  Future<Peripheral> _resolvePeripheral(Device device) async {
+    final Peripheral? cached = _discoveredPeripherals[device.id];
+    if (cached != null) return cached;
+
+    final String? address = bluetoothAddressFromDeviceId(device.id);
+    if (address == null) {
+      throwPeer(PeerErrorCode.deviceNotFound);
+    }
+    _log.w(
+      'Discovery cache missed ${device.id}, connecting by address $address',
+    );
+    final Peripheral peripheral = await _centralManager.getPeripheral(address);
+    _discoveredPeripherals[device.id] = peripheral;
+    return peripheral;
   }
 
   String _getCleanDeviceName(String deviceName, String appName) {

@@ -1,3 +1,9 @@
+## 0.5.1
+
+- **Discovery:** scan without a hardware service-UUID `ScanFilter`. On Samsung Galaxy A01/A12 that filter matches nothing while the host is advertising.
+- **Discovery:** keep the last-seen peripheral across the discovery TTL so an invite can still connect while the UI snapshot shows the host.
+- **Transport:** if the discovery cache misses, resolve the peripheral from the device id (`UUID.fromAddress` node) and call `connectGatt`.
+
 ## 0.5.0
 
 - **Plugin:** package is now a Flutter plugin with an optional Android connected-device foreground service.
