@@ -123,8 +123,12 @@ final class BleLinkClientImpl extends BleLinkBase
     final int generation = _beginConnect(peripheral);
     try {
       resetIntentionalDisconnect();
-      await _retention.retain();
-      _sessionRetained = true;
+      try {
+        await _retention.retain();
+        _sessionRetained = true;
+      } on Object catch (error) {
+        _log.e('Foreground retention failed, BLE session continues: $error');
+      }
       _connectionStateSubscription = _centralManager.connectionStateChanged
           .listen((event) {
             final Peripheral? connected = _connectedPeripheral;

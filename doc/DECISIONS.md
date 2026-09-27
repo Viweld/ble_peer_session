@@ -70,7 +70,7 @@
 | | |
 |--|--|
 | **Status** | Accepted |
-| **Decision** | Preferred: пакет содержит нейтральную monochrome иконку `ic_stat_ble_peer`. `smallIcon == null` → она. Хост может передать `@drawable/…` / `@mipmap/…`. Невалидный resource → `PlatformException`, не native crash. |
+| **Decision** | Пакет содержит нейтральную monochrome иконку `ic_stat_ble_peer`. `smallIcon == null` или ресурс, которого нет в APK хоста (в том числе после resource shrinking) → эта иконка. Сбой старта FGS логируется и не отменяет уже начатую BLE-сессию. |
 
 ## BPS-10 — migration strategy
 

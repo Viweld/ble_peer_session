@@ -228,7 +228,7 @@ final peer = Peer.create(
 );
 ```
 
-The plugin merges `FOREGROUND_SERVICE` / `FOREGROUND_SERVICE_CONNECTED_DEVICE`. The host must still request `POST_NOTIFICATIONS` on Android 13+ if it wants the notification visible. Invalid `smallIcon` throws `PeerException` (`unexpected`) with a `PlatformException` cause — it does not crash native code.
+The plugin merges `FOREGROUND_SERVICE` / `FOREGROUND_SERVICE_CONNECTED_DEVICE`. The host must still request `POST_NOTIFICATIONS` on Android 13+ if it wants the notification visible. A missing or stripped `smallIcon` falls back to the package icon. A foreground-service start failure is logged and does not abort the BLE session.
 
 `nearbyHostsStream` emits **live snapshots** of currently advertised hosts (not a historical union). Starting a scan emits `[]` first. Hosts that stop advertising disappear after `discoveryStaleAfter` (default 3 seconds).
 

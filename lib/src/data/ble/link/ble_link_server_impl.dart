@@ -101,7 +101,12 @@ final class BleLinkServerImpl extends BleLinkBase
       await _peripheral.startAdvertising(
         Advertisement(name: deviceName, serviceUUIDs: [super.serviceUuid]),
       );
-      await _retainSession();
+      // Notification branding must not tear down a live advertisement.
+      try {
+        await _retainSession();
+      } on Object catch (error) {
+        _log.e('Foreground retention failed, BLE session continues: $error');
+      }
     } on PeerException {
       rethrow;
     } on Object catch (e) {

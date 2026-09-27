@@ -5,6 +5,7 @@ import android.content.Intent
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
@@ -92,12 +93,14 @@ class BlePeerSessionPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         val name = if (parts.size == 2) parts[1] else value
         val resolved = appContext.resources.getIdentifier(name, type, appContext.packageName)
         if (resolved == 0) {
-            throw IllegalArgumentException("Unknown smallIcon resource: $resourceName")
+            Log.w(TAG, "Unknown smallIcon resource: $resourceName, using package icon")
+            return R.drawable.ic_stat_ble_peer
         }
         return resolved
     }
 
     companion object {
+        private const val TAG = "BlePeerSession"
         const val CHANNEL = "dev.viweld.ble_peer_session/foreground"
 
         @Volatile

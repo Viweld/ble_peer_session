@@ -1,3 +1,8 @@
+## 0.5.2
+
+- **Android:** a missing or shrinker-stripped `smallIcon` falls back to the package status icon. It does not fail host advertising or client connect.
+- **Android:** a foreground-service start failure is logged. The BLE session stays up.
+
 ## 0.5.1
 
 - **Discovery:** scan without a hardware service-UUID `ScanFilter`. On Samsung Galaxy A01/A12 that filter matches nothing while the host is advertising.

@@ -3,7 +3,8 @@ final class BleAndroidForegroundConfig {
   /// Creates Android foreground branding.
   ///
   /// [smallIcon] is a host resource name such as `@drawable/ic_stat_app`.
-  /// `null` uses the package generic status-bar icon.
+  /// `null`, or a name the host package does not contain, uses the package icon.
+  /// A missing icon does not fail the BLE session.
   const BleAndroidForegroundConfig({
     required this.title,
     this.body = 'Bluetooth peer session is active',

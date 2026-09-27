@@ -53,7 +53,7 @@ See also: [main README](../README.md) · [doc index](README.md)
 |------|---------------|-------------------|
 | `disposed` | Used after `peer.dispose()` | Create new `Peer` |
 | `operationCancelled` | In-flight connect aborted | Treat as user cancel; retry is allowed immediately |
-| `unexpected` | Unmapped platform error, including FGS start refusal / invalid `smallIcon` | Log `cause`; generic error UI |
+| `unexpected` | Unmapped platform error. A missing `smallIcon` or FGS start refusal does not use this code: the session keeps the package icon and stays up | Log `cause`; generic error UI |
 
 ---
 
